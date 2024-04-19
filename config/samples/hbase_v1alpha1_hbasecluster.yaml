@@ -1,0 +1,12 @@
+apiVersion: hbase.zncdata.dev/v1alpha1
+kind: HbaseCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: hbasecluster
+    app.kubernetes.io/instance: hbasecluster-sample
+    app.kubernetes.io/part-of: hbase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: hbase-operator
+  name: hbasecluster-sample
+spec:
+  # TODO(user): Add fields here
