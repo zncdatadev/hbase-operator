@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - hbase.zncdata.dev
+  resources:
+  - hbaseclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - hbase.zncdata.dev
+  resources:
+  - hbaseclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - hbase.zncdata.dev
+  resources:
+  - hbaseclusters/status
+  verbs:
+  - get
+  - patch
+  - update

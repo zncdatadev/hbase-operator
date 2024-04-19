@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- hbase_v1alpha1_hbasecluster.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
