@@ -25,6 +25,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/pkg/handler"
+)
+
+var (
+	logger = log.Log.WithName("controller")
 )
 
 // HbaseClusterReconciler reconciles a HbaseCluster object
@@ -47,9 +52,48 @@ type HbaseClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	logger.V(1).Info("Reconciling HbaseCluster")
+
+	// Fetch the HbaseCluster instance
+	instance := &hbasev1alpha1.HbaseCluster{}
+	err := r.Get(ctx, req.NamespacedName, instance)
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	reconciler, err := handler.NewGenericReconciler(
+		handler.Client{
+			Client: r.Client,
+			Schema: r.Scheme,
+		},
+		&HbaseClusterAttribute{
+			BaseAttribute: handler.BaseAttribute{
+				OwnerResource: instance,
+			},
+			Spec: &instance.Spec,
+		},
+	)
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = reconciler.Register()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	result, err := reconciler.DoReconcile()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if result.Requeue {
+		return result.Result(), nil
+	}
+
+	logger.V(1).Info("Reconcile finished")
 
 	return ctrl.Result{}, nil
 }

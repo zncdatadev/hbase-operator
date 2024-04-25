@@ -25,17 +25,51 @@ import (
 
 // HbaseClusterSpec defines the desired state of HbaseCluster
 type HbaseClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Optional
+	Image *ImageSpec `json:"image,omitempty"`
 
-	// Foo is an example field of HbaseCluster. Edit hbasecluster_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Required
+	ClusterConfigSpec *ClusterConfigSpec `json:"clusterConfig,omitempty"`
+
+	// +kubebuilder:validation:Required
+	ClusterOperationSpec *ClusterOperationSpec `json:"clusterOperation,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	MasterSpec *MasterSpec `json:"master,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	RegionServerSpec *RegionServerSpec `json:"regionServer,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	RestServerSpec *RestServerSpec `json:"restServer,omitempty"`
+}
+
+type ClusterConfigSpec struct {
+
+	// +kubebuilder:validation:Required
+	ZookeeperConfigMapName string `json:"zookeeperConfigMapName,omitempty"`
+
+	// +kubebuilder:validation:Required
+	HdfsConfigMapName string `json:"hdfsConfigMapName,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	ListenerClass string `json:"listenerClass,omitempty"`
+}
+
+type ClusterOperationSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	ReconciliationPaused bool `json:"reconciliationPaused,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	Stopped bool `json:"stopped,omitempty"`
 }
 
 // HbaseClusterStatus defines the observed state of HbaseCluster
 type HbaseClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
