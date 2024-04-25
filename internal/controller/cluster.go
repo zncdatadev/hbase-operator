@@ -59,7 +59,7 @@ func (h *HbaseClusterAttribute) GetSubAttributes() ([]handler.Attribute, error) 
 			h.GetLabels(),
 			h.GetAnnotations(),
 		)
-
+		logger.Info("subAttribute", "name", subAttribute.GetName())
 		subAttributes = append(subAttributes, subAttribute)
 	}
 

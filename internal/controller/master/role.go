@@ -4,6 +4,11 @@ import (
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
 	"github.com/zncdata-labs/hbase-operator/internal/common"
 	"github.com/zncdata-labs/hbase-operator/pkg/handler"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+	logger = ctrl.Log.WithName("master")
 )
 
 var _ handler.Attribute = &MasterRoleAttribute{}
@@ -35,6 +40,7 @@ func (m *MasterRoleAttribute) GetSubAttributes() ([]handler.Attribute, error) {
 			Spec:          &roleGroup,
 		}
 
+		logger.Info("MasterRoleAttribute.GetSubAttributes", "roleGroup", roleGroup)
 		subAttributes = append(subAttributes, subAttribute)
 	}
 

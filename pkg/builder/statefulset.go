@@ -22,7 +22,7 @@ type StatefulSet struct {
 }
 
 func (s *StatefulSet) Build() *appv1.StatefulSet {
-	replicas := s.Replicas()
+	var replicas = s.Replicas()
 	obj := &appv1.StatefulSet{
 		ObjectMeta: s.BuildObjectMeta(),
 		Spec: appv1.StatefulSetSpec{
