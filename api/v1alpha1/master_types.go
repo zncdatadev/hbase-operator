@@ -23,8 +23,8 @@ type MasterSpec struct {
 	// +kubebuilder:validation:Optional
 	EnvOverrides map[string]string `json:"envOverrides,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }
 
 type MasterConfigSpec struct {
@@ -74,6 +74,6 @@ type MasterRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	EnvOverrides map[string]string `json:"envOverrides,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }

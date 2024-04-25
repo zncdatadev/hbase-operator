@@ -23,8 +23,8 @@ type RestServerSpec struct {
 	// +kubebuilder:validation:Optional
 	EnvOverrides map[string]string `json:"envOverrides,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }
 
 type RestServerConfigSpec struct {
@@ -74,6 +74,6 @@ type RestServerRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	EnvOverrides map[string]string `json:"envOverrides,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }
