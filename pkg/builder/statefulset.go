@@ -7,7 +7,7 @@ import (
 )
 
 type StatefulSetBuilder interface {
-	ResourceBuilder[appv1.StatefulSet]
+	ResourceBuilder
 	Replicas() int32
 	Selector() *metav1.LabelSelector
 	BuildObjectMeta() metav1.ObjectMeta
@@ -16,13 +16,15 @@ type StatefulSetBuilder interface {
 }
 
 type StatefulSet struct {
-	Resource
-
-	Containers []corev1.Container
+	BaseResourceBuilder
+	Image      string
+	PullPolicy corev1.PullPolicy
+	Replicas   int32
+	containers []corev1.Container
 }
 
 func (s *StatefulSet) Build() *appv1.StatefulSet {
-	var replicas = s.Replicas()
+	var replicas = s.GetReplicas()
 	obj := &appv1.StatefulSet{
 		ObjectMeta: s.BuildObjectMeta(),
 		Spec: appv1.StatefulSetSpec{
@@ -35,13 +37,21 @@ func (s *StatefulSet) Build() *appv1.StatefulSet {
 	return obj
 }
 
+func (s *StatefulSet) Name() string {
+	return "test"
+}
+
+func (s *StatefulSet) Namespace() string {
+	return "default"
+}
+
 func (s *StatefulSet) Labels() map[string]string {
 	return map[string]string{
 		"app": s.Name(),
 	}
 }
 
-func (s *StatefulSet) Replicas() int32 {
+func (s *StatefulSet) GetReplicas() int32 {
 	return 1
 }
 
@@ -65,7 +75,7 @@ func (s *StatefulSet) BuildPodTemplateSpec() corev1.PodTemplateSpec {
 			Labels: s.Labels(),
 		},
 		Spec: corev1.PodSpec{
-			Containers: s.Containers,
+			Containers: s.containers,
 			Volumes:    s.Volumes(),
 		},
 	}

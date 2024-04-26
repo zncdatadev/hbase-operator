@@ -2,47 +2,49 @@ package master
 
 import (
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/internal/common"
-	"github.com/zncdata-labs/hbase-operator/pkg/handler"
+	"github.com/zncdata-labs/hbase-operator/pkg/builder"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
 	logger = ctrl.Log.WithName("master")
 )
 
-var _ handler.Attribute = &MasterRoleAttribute{}
+var _ builder.ResourceBuilder = &MasterRoleBuilder{}
 
-type MasterRoleAttribute struct {
-	common.BaseAttribute
+type MasterRoleBuilder struct {
+	builder.BaseResourceBuilder
+
 	Spec *hbasev1alpha1.MasterSpec
 }
 
-func (m *MasterRoleAttribute) GetSubAttributes() ([]handler.Attribute, error) {
-	var subAttributes []handler.Attribute
-
-	base := common.BaseAttribute{
-		BaseAttribute: handler.BaseAttribute{
-			Name:          m.Name,
-			OwnerResource: m.OwnerResource,
-			Labels:        m.GetLabels(),
-			Annotations:   m.GetAnnotations(),
-		},
-
-		ClusterOperation: m.ClusterOperation,
-		ClusterConfig:    m.ClusterConfig,
-		Image:            m.Image,
-	}
-
-	for _, roleGroup := range m.Spec.RoleGroups {
-		subAttribute := &MasterRolgGroupAttribute{
-			BaseAttribute: base,
-			Spec:          &roleGroup,
-		}
-
-		logger.Info("MasterRoleAttribute.GetSubAttributes", "roleGroup", roleGroup)
-		subAttributes = append(subAttributes, subAttribute)
-	}
-
-	return subAttributes, nil
+func (m *MasterRoleBuilder) Build() (client.Object, error) {
+	logger.Info("Building MasterRole")
+	return nil, nil
 }
+
+// var _ handler.ResourceHandler = &MasterRoleReconciler{}
+
+// type MasterRoleReconciler struct {
+// 	handler.BaseReconciler
+// }
+
+// func NewMasterRoleReconciler(
+// 	client builder.Client,
+// 	builder builder.ResourceBuilder,
+
+// ) (*MasterRoleReconciler, error) {
+// 	obj := &MasterRoleReconciler{
+// 		BaseReconciler: handler.BaseReconciler{
+// 			Client:  client,
+// 			Builder: builder,
+// 		},
+// 	}
+
+// 	if err := obj.Register(); err != nil {
+// 		return nil, err
+// 	}
+
+// 	return obj, nil
+// }

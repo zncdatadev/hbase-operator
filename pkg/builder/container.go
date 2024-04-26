@@ -5,7 +5,6 @@ import (
 )
 
 type ContainerBuilder interface {
-	ResourceBuilder[corev1.Container]
 	Args() []string
 	Ports() []corev1.ContainerPort
 	Env() []corev1.EnvVar
@@ -13,12 +12,14 @@ type ContainerBuilder interface {
 	LivenessProbe() *corev1.Probe
 	ReadinessProbe() *corev1.Probe
 	ImagePullPolicy() corev1.PullPolicy
+
+	Build() *corev1.Container
 }
 
 var _ ContainerBuilder = &Container{}
 
 type Container struct {
-	Resource
+	Name string
 }
 
 func NewContainer() (*Container, error) {
@@ -27,7 +28,7 @@ func NewContainer() (*Container, error) {
 
 func (c *Container) Build() *corev1.Container {
 	return &corev1.Container{
-		Name:            c.Name(),
+		Name:            c.Name,
 		Image:           "docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0",
 		Args:            c.Args(),
 		Ports:           c.Ports(),
