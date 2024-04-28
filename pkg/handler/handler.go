@@ -1,18 +1,12 @@
 package handler
 
-import "sigs.k8s.io/controller-runtime/pkg/client"
+import "k8s.io/apimachinery/pkg/runtime"
 
 type ResourceHandler interface {
+	GetOwnerResource() runtime.Object
 	DoReconcile() (ReconcileResult, error)
 	Ready() bool
+
 	Register() error
 	AddReconciler(ResourceHandler) error
-}
-
-type Attribute interface {
-	GetSubAttributes() ([]Attribute, error)
-	GetName() string
-	GetLabels() map[string]string
-	GetAnnotations() map[string]string
-	GetOwnerResource() client.Object
 }

@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/handler"
 )
 
 var (
@@ -60,37 +59,6 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	reconciler, err := handler.NewGenericReconciler(
-		handler.Client{
-			Client: r.Client,
-			Schema: r.Scheme,
-		},
-		&HbaseClusterAttribute{
-			BaseAttribute: handler.BaseAttribute{
-				OwnerResource: instance,
-			},
-			Spec: &instance.Spec,
-		},
-	)
-
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	err = reconciler.Register()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	result, err := reconciler.DoReconcile()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if result.Requeue {
-		return result.Result(), nil
 	}
 
 	logger.V(1).Info("Reconcile finished")
