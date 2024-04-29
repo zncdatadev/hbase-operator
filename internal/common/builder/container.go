@@ -4,6 +4,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// TODO: Add more fields to ContainerBuilder
+
 type IContainerBuilder interface {
 	Build() corev1.Container
 }
@@ -16,5 +18,4 @@ type ContainerBuilder struct {
 	Args       []string
 	Env        []corev1.EnvVar
 	Ports      []corev1.ContainerPort
-	
 }

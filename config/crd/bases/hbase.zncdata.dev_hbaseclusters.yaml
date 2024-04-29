@@ -1046,10 +1046,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -2234,10 +2230,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:
@@ -3332,10 +3324,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -4520,10 +4508,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:
@@ -5618,10 +5602,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -6806,10 +6786,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:

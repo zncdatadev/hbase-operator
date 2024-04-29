@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/api/v1alpha1"
+	apisv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -151,7 +151,7 @@ func (in *HbaseClusterSpec) DeepCopyInto(out *HbaseClusterSpec) {
 	}
 	if in.ClusterOperationSpec != nil {
 		in, out := &in.ClusterOperationSpec, &out.ClusterOperationSpec
-		*out = new(apiv1alpha1.ClusterOperationSpec)
+		*out = new(apisv1alpha1.ClusterOperationSpec)
 		**out = **in
 	}
 	if in.MasterSpec != nil {
@@ -297,13 +297,6 @@ func (in *MasterConfigSpec) DeepCopyInto(out *MasterConfigSpec) {
 		*out = new(corev1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NodeSelector != nil {
-		in, out := &in.NodeSelector, &out.NodeSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]corev1.Toleration, len(*in))
@@ -328,7 +321,7 @@ func (in *MasterConfigSpec) DeepCopyInto(out *MasterConfigSpec) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(apiv1alpha1.ResourcesSpec)
+		*out = new(apisv1alpha1.ResourcesSpec)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -472,13 +465,6 @@ func (in *RegionConfigSpec) DeepCopyInto(out *RegionConfigSpec) {
 		*out = new(corev1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NodeSelector != nil {
-		in, out := &in.NodeSelector, &out.NodeSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]corev1.Toleration, len(*in))
@@ -503,7 +489,7 @@ func (in *RegionConfigSpec) DeepCopyInto(out *RegionConfigSpec) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(apiv1alpha1.ResourcesSpec)
+		*out = new(apisv1alpha1.ResourcesSpec)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -572,7 +558,7 @@ func (in *RegonRoleGroupSpec) DeepCopyInto(out *RegonRoleGroupSpec) {
 	*out = *in
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
-		*out = new(MasterConfigSpec)
+		*out = new(RegionConfigSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodDisruptionBudget != nil {
@@ -632,13 +618,6 @@ func (in *RestServerConfigSpec) DeepCopyInto(out *RestServerConfigSpec) {
 		*out = new(corev1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NodeSelector != nil {
-		in, out := &in.NodeSelector, &out.NodeSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]corev1.Toleration, len(*in))
@@ -663,7 +642,7 @@ func (in *RestServerConfigSpec) DeepCopyInto(out *RestServerConfigSpec) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(apiv1alpha1.ResourcesSpec)
+		*out = new(apisv1alpha1.ResourcesSpec)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -683,7 +662,7 @@ func (in *RestServerRoleGroupSpec) DeepCopyInto(out *RestServerRoleGroupSpec) {
 	*out = *in
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
-		*out = new(MasterConfigSpec)
+		*out = new(RestServerConfigSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodDisruptionBudget != nil {

@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/api/v1alpha1"
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -31,9 +31,6 @@ type MasterSpec struct {
 type MasterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Affinity *corev1.Affinity `json:"affinity"`
-
-	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations"`

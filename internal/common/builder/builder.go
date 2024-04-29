@@ -1,7 +1,7 @@
 package builder
 
 import (
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/api/v1alpha1"
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,7 +15,6 @@ type Builder interface {
 
 	GetLabels() map[string]string
 	GetAnnotations() map[string]string
-	GetClusterOperation() *apiv1alpha1.ClusterOperationSpec
 }
 
 var _ ResourceBuilder = &BaseResourceBuilder{}
@@ -56,10 +55,6 @@ func (b *BaseResourceBuilder) GetLabels() map[string]string {
 
 func (b *BaseResourceBuilder) GetAnnotations() map[string]string {
 	return b.Annotations
-}
-
-func (b *BaseResourceBuilder) GetClusterOperation() *apiv1alpha1.ClusterOperationSpec {
-	return b.ClusterOperation
 }
 
 // func (b *BaseResourceBuilder[T]) GetSpec() T {

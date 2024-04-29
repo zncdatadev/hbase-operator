@@ -41,6 +41,10 @@ func (s *StatefulSetReconciler[T]) Reconcile() (ReconcileResult, error) {
 	panic("unimplemented")
 }
 
+func (s *StatefulSetReconciler[T]) AddFinalizer(obj *appv1.StatefulSet) {
+	panic("unimplemented")
+}
+
 func NewStatefulSetReconciler[O runtime.Object, T AnySpec](
 	client client.Client,
 	schema *runtime.Scheme,

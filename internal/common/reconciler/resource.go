@@ -14,6 +14,7 @@ type WorkloadReconciler[T client.Object] interface {
 	ResourceReconciler[T]
 	CommandOverwide(obj T)
 	EnvOverwide(obj T)
+	AddFinalizer(obj T)
 }
 
 type ConfigurationReconciler[T client.Object] interface {
