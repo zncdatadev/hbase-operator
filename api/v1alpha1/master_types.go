@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,7 +49,7 @@ type MasterConfigSpec struct {
 	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Resources *ResourcesSpec `json:"resources,omitempty"`
+	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
 }
 
 type MasterConfigOverrideSpec struct {

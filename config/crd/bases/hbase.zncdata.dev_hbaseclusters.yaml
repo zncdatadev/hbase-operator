@@ -44,6 +44,7 @@ spec:
                     type: string
                 type: object
               clusterOperation:
+                description: ClusterOperationSpec defines the desired state of ClusterOperation
                 properties:
                   reconciliationPaused:
                     default: false

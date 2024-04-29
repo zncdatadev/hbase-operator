@@ -1,53 +1,40 @@
 package master
 
 import (
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
+	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/internal/common/reconciler"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ builder.ResourceBuilder = &StatefulSetBuilder{}
+var _ reconciler.Reconciler = &MasterStatefulSetReconciler{}
 
-type StatefulSetBuilder struct {
-	builder.StatefulSet
+type MasterStatefulSetReconciler struct {
+	reconciler.StatefulSetReconciler[*hbasev1alph1.MasterRoleGroupSpec]
 }
 
-// Build implements builder.ResourceBuilder.
-// Subtle: this method shadows the method (StatefulSet).Build of StatefulSetBuilder.StatefulSet.
-func (s *StatefulSetBuilder) Build() (client.Object, error) {
-	panic("unimplemented")
-}
+func NewMasterStatefulSetReconciler(
+	client client.Client,
+	schema *runtime.Scheme,
 
-// GetAnnotations implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetAnnotations() map[string]string {
-	panic("unimplemented")
-}
+	roleGroupName string,
+	labels map[string]string,
+	annotations map[string]string,
 
-// GetLabels implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetLabels() map[string]string {
-	panic("unimplemented")
-}
+	ownerReference runtime.Object,
 
-// GetName implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetName() string {
-	panic("unimplemented")
-}
+	spec *hbasev1alph1.MasterRoleGroupSpec,
 
-// GetNamespace implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetNamespace() string {
-	panic("unimplemented")
-}
-
-// GetOwnerResource implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetOwnerResource() client.Object {
-	panic("unimplemented")
-}
-
-// GetSpec implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetSpec() any {
-	panic("unimplemented")
-}
-
-// GetSubBuilder implements builder.ResourceBuilder.
-func (s *StatefulSetBuilder) GetSubBuilder() ([]builder.ResourceBuilder, error) {
-	panic("unimplemented")
+) *MasterStatefulSetReconciler {
+	return &MasterStatefulSetReconciler{
+		StatefulSetReconciler: *reconciler.NewStatefulSetReconciler(
+			client,
+			schema,
+			roleGroupName,
+			labels,
+			annotations,
+			ownerReference,
+			spec,
+		),
+	}
 }
