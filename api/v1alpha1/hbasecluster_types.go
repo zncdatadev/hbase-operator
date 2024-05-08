@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,7 @@ type HbaseClusterSpec struct {
 	ClusterConfigSpec *ClusterConfigSpec `json:"clusterConfig,omitempty"`
 
 	// +kubebuilder:validation:Required
-	ClusterOperationSpec *ClusterOperationSpec `json:"clusterOperation,omitempty"`
+	ClusterOperationSpec *apiv1alpha1.ClusterOperationSpec `json:"clusterOperation,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	MasterSpec *MasterSpec `json:"master,omitempty"`
@@ -47,23 +48,13 @@ type HbaseClusterSpec struct {
 type ClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Required
-	ZookeeperConfigMapName string `json:"zookeeperConfigMapName,omitempty"`
+	ZookeeperConfigMap string `json:"zookeeperConfigMap,omitempty"`
 
 	// +kubebuilder:validation:Required
-	HdfsConfigMapName string `json:"hdfsConfigMapName,omitempty"`
+	HdfsConfigMap string `json:"hdfsConfigMap,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ListenerClass string `json:"listenerClass,omitempty"`
-}
-
-type ClusterOperationSpec struct {
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=false
-	ReconciliationPaused bool `json:"reconciliationPaused,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=false
-	Stopped bool `json:"stopped,omitempty"`
 }
 
 // HbaseClusterStatus defines the observed state of HbaseCluster

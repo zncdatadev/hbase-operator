@@ -36,14 +36,15 @@ spec:
             properties:
               clusterConfig:
                 properties:
-                  hdfsConfigMapName:
+                  hdfsConfigMap:
                     type: string
                   listenerClass:
                     type: string
-                  zookeeperConfigMapName:
+                  zookeeperConfigMap:
                     type: string
                 type: object
               clusterOperation:
+                description: ClusterOperationSpec defines the desired state of ClusterOperation
                 properties:
                   reconciliationPaused:
                     default: false
@@ -68,7 +69,7 @@ spec:
                 type: object
               master:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -1045,10 +1046,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -1157,7 +1154,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
@@ -2233,10 +2230,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:
@@ -2354,7 +2347,7 @@ spec:
                 type: object
               regionServer:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -3331,10 +3324,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -3443,7 +3432,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
@@ -4519,10 +4508,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:
@@ -4640,7 +4625,7 @@ spec:
                 type: object
               restServer:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -5617,10 +5602,6 @@ spec:
                                 type: object
                             type: object
                         type: object
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podDisruptionBudget:
                         properties:
                           maxUnavailable:
@@ -5729,7 +5710,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
@@ -6805,10 +6786,6 @@ spec:
                                         type: object
                                       type: object
                                   type: object
-                              type: object
-                            nodeSelector:
-                              additionalProperties:
-                                type: string
                               type: object
                             podDisruptionBudget:
                               properties:

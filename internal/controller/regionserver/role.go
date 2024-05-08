@@ -1,4 +1,4 @@
-package master
+package regionserver
 
 import (
 	"context"
@@ -13,13 +13,11 @@ import (
 )
 
 var (
-	logger = ctrl.Log.WithName("controller").WithName("master")
+	logger = ctrl.Log.WithName("controller").WithName("regionServer")
 )
 
-var _ reconciler.RoleReconciler = &Reconciler{}
-
 type Reconciler struct {
-	reconciler.BaseRoleReconciler[*hbasev1alph1.MasterSpec]
+	reconciler.BaseRoleReconciler[*hbasev1alph1.RegionServerSpec]
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 }
 
@@ -36,7 +34,7 @@ func (m *Reconciler) RegisterResources(ctx context.Context) error {
 	return nil
 }
 
-func (m *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.MasterRoleGroupSpec) error {
+func (m *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.RegionServerRoleGroupSpec) error {
 	mergedRoleGroup := roleGroup.DeepCopy()
 	m.MergeRoleGroup(&mergedRoleGroup)
 
@@ -87,10 +85,10 @@ func NewReconciler(
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
 	imageSpec *hbasev1alph1.ImageSpec,
 	name string,
-	spec *hbasev1alph1.MasterSpec,
+	spec *hbasev1alph1.RegionServerSpec,
 ) *Reconciler {
 
-	image := image.Image{
+	i := image.Image{
 		Repository: imageSpec.Repository,
 		Tag:        imageSpec.Tag,
 		PullPolicy: imageSpec.PullPolicy,
@@ -105,7 +103,7 @@ func NewReconciler(
 			ownerReference.GetLabels(),
 			ownerReference.GetAnnotations(),
 			clusterOperation,
-			image,
+			i,
 			spec,
 		),
 		ClusterConfig: clusterConfig,

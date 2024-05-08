@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	"github.com/zncdata-labs/hbase-operator/internal/controller/cluster"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,19 +38,10 @@ type HbaseClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the HbaseCluster object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	logger.V(1).Info("Reconciling HbaseCluster")
@@ -62,6 +54,24 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	logger.V(1).Info("Reconcile finished")
+
+	clusterReconciler := cluster.NewClusterReconciler(
+		r.Client,
+		r.Scheme,
+		instance,
+	)
+
+	if err := clusterReconciler.RegisterResources(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if result := clusterReconciler.Reconcile(); result.RequeueOrNot() {
+		return result.Result()
+	}
+
+	if result := clusterReconciler.Ready(); result.RequeueOrNot() {
+		return result.Result()
+	}
 
 	return ctrl.Result{}, nil
 }

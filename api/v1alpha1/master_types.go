@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,7 +16,7 @@ type MasterSpec struct {
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *MasterConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -32,9 +33,6 @@ type MasterConfigSpec struct {
 	Affinity *corev1.Affinity `json:"affinity"`
 
 	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
@@ -48,7 +46,7 @@ type MasterConfigSpec struct {
 	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Resources *ResourcesSpec `json:"resources,omitempty"`
+	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
 }
 
 type MasterConfigOverrideSpec struct {
@@ -57,7 +55,7 @@ type MasterConfigOverrideSpec struct {
 type MasterRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=1
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Config *MasterConfigSpec `json:"config,omitempty"`
@@ -66,7 +64,7 @@ type MasterRoleGroupSpec struct {
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *MasterConfigOverrideSpec `json:"configOverrides,omitempty"`

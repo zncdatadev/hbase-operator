@@ -1,69 +1,63 @@
 package builder
 
 import (
-	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	"context"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type ResourceBuilder interface {
+type Builder interface {
+	Build(ctx context.Context) (client.Object, error)
+	GetObjectMeta() metav1.ObjectMeta
+	GetClient() client.Client
 	GetName() string
 	GetNamespace() string
 	GetLabels() map[string]string
 	GetAnnotations() map[string]string
-	GetOwnerResource() client.Object
-
-	Build() (client.Object, error)
-
-	GetSpec() any
-	GetSubBuilder() ([]ResourceBuilder, error)
 }
 
 var _ ResourceBuilder = &BaseResourceBuilder{}
 
 type BaseResourceBuilder struct {
-	Client        Client
-	Name          string
-	OwnerResource client.Object
-	Labels        map[string]string
-	Annotations   map[string]string
+	Client client.Client
 
-	Image            *hbasev1alpha1.ImageSpec
-	ClusterConfig    *hbasev1alpha1.ClusterConfigSpec
-	ClusterOperation *hbasev1alpha1.ClusterOperationSpec
+	Name        string
+	Namespace   string
+	Labels      map[string]string
+	Annotations map[string]string
 }
 
-func (r *BaseResourceBuilder) GetName() string {
-	return r.Name
+func (b *BaseResourceBuilder) GetClient() client.Client {
+	return b.Client
 }
 
-func (r *BaseResourceBuilder) GetOwnerResource() client.Object {
-	return r.OwnerResource
+func (b *BaseResourceBuilder) GetName() string {
+	return b.Name
 }
 
-func (r *BaseResourceBuilder) GetNamespace() string {
-	return r.OwnerResource.GetNamespace()
+func (b *BaseResourceBuilder) GetNamespace() string {
+	return b.Namespace
 }
 
-func (r *BaseResourceBuilder) GetSubBuilder() ([]ResourceBuilder, error) {
-	panic("unimplemented")
+func (b *BaseResourceBuilder) GetObjectMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:        b.Name,
+		Namespace:   b.Namespace,
+		Labels:      b.Labels,
+		Annotations: b.Annotations,
+	}
+
 }
 
-func (r *BaseResourceBuilder) GetAnnotations() map[string]string {
-	panic("unimplemented")
+func (b *BaseResourceBuilder) GetLabels() map[string]string {
+	return b.Labels
 }
 
-func (r *BaseResourceBuilder) GetLabels() map[string]string {
-	panic("unimplemented")
+func (b *BaseResourceBuilder) GetAnnotations() map[string]string {
+	return b.Annotations
 }
 
-func (r *BaseResourceBuilder) Build() (client.Object, error) {
-	panic("implement me")
-}
-
-func (r *BaseResourceBuilder) GetSubResourceBuilder() ([]ResourceBuilder, error) {
-	panic("implement me")
-}
-
-func (r *BaseResourceBuilder) GetSpec() any {
+func (b *BaseResourceBuilder) Build(ctx context.Context) (client.Object, error) {
 	panic("implement me")
 }

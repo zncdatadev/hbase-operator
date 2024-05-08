@@ -1,18 +1,21 @@
 package v1alpha1
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+)
 
 type RegionServerSpec struct {
 	// +kubebuilder:validation:Optional
 	Config *RegionConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Required
-	RoleGroups map[string]RegonRoleGroupSpec `json:"roleGroups,omitempty"`
+	RoleGroups map[string]RegionServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -29,9 +32,6 @@ type RegionConfigSpec struct {
 	Affinity *corev1.Affinity `json:"affinity"`
 
 	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
@@ -45,24 +45,24 @@ type RegionConfigSpec struct {
 	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Resources *ResourcesSpec `json:"resources,omitempty"`
+	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
 }
 
 type RegionConfigOverrideSpec struct{}
 
-type RegonRoleGroupSpec struct {
+type RegionServerRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=1
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Config *MasterConfigSpec `json:"config,omitempty"`
+	Config *RegionConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Required
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`

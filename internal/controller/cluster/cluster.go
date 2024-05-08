@@ -1,79 +1,87 @@
 package cluster
 
 import (
+	"context"
+
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
-	"github.com/zncdata-labs/hbase-operator/pkg/handler"
+	"github.com/zncdata-labs/hbase-operator/internal/controller/master"
+	"github.com/zncdata-labs/hbase-operator/internal/controller/regionserver"
+	"github.com/zncdata-labs/hbase-operator/internal/controller/restserver"
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	ExcludeFields = []string{"ConfigOverrides", "ClusterConfig", "PodOverride", "Image"}
-)
+var _ reconciler.Reconciler = &Reconciler{}
 
-const (
-	MasterRoleName = "Master"
-)
-
-var _ builder.ResourceBuilder = &HbaseClusterBuilder{}
-
-type HbaseClusterBuilder struct {
-	builder.BaseResourceBuilder
-
-	HbaseClusterSpec *hbasev1alpha1.HbaseClusterSpec
+type Reconciler struct {
+	reconciler.BaseClusterReconciler[*hbasev1alpha1.HbaseClusterSpec]
+	ClusterOperation *apiv1alpha1.ClusterOperationSpec
+	ClusterConfig    *hbasev1alpha1.ClusterConfigSpec
+	Image            *hbasev1alpha1.ImageSpec
 }
 
-func (h *HbaseClusterBuilder) Build() (client.Object, error) {
-	return nil, nil
-}
+func (r *Reconciler) RegisterResources(_ context.Context) error {
 
-var _ handler.ResourceHandler = &HbaseClusterreconciler{}
+	masterReconciler := master.NewReconciler(
+		r.GetClient(),
+		r.GetSchema(),
+		r.GetOwnerReference(),
+		r.ClusterOperation,
+		r.ClusterConfig,
+		r.Image,
+		"master",
+		r.Spec.MasterSpec,
+	)
+	r.AddResource(masterReconciler)
 
-type HbaseClusterreconciler struct {
-	handler.BaseReconciler
-}
+	regionServerReconciler := regionserver.NewReconciler(
+		r.GetClient(),
+		r.GetSchema(),
+		r.GetOwnerReference(),
+		r.ClusterOperation,
+		r.ClusterConfig,
+		r.Image,
+		"regionserver",
+		r.Spec.RegionServerSpec,
+	)
+	r.AddResource(regionServerReconciler)
 
-func (h *HbaseClusterreconciler) Register() error {
-
-	roles, err := h.Builder.GetSubBuilder()
-
-	if err != nil {
-		return err
-
-	}
-
-	for _, role := range roles {
-		reconciler, err := handler.NewRoleReconciler(h.Client, role)
-		if err != nil {
-			return err
-		}
-
-		if err := reconciler.Register(); err != nil {
-			return err
-		}
-
-		if err := h.AddReconciler(reconciler); err != nil {
-			return err
-		}
-	}
-
+	restServerReconciler := restserver.NewReconciler(
+		r.GetClient(),
+		r.GetSchema(),
+		r.GetOwnerReference(),
+		r.ClusterOperation,
+		r.ClusterConfig,
+		r.Image,
+		"restserver",
+		r.Spec.RestServerSpec,
+	)
+	r.AddResource(restServerReconciler)
 	return nil
 }
 
-func NewHbaseClusterreconciler(
-	Client builder.Client,
-	Builder builder.ResourceBuilder,
-) (*HbaseClusterreconciler, error) {
-	obj := &HbaseClusterreconciler{
-		BaseReconciler: handler.BaseReconciler{
-			Client:  Client,
-			Builder: Builder,
-		},
-	}
+func (r *Reconciler) Reconcile() reconciler.Result {
+	return r.BaseClusterReconciler.Reconcile()
+}
 
-	if err := obj.Register(); err != nil {
-		return nil, err
+func NewClusterReconciler(
+	client client.Client,
+	schema *runtime.Scheme,
+	owner *hbasev1alpha1.HbaseCluster,
+) *Reconciler {
+	owner = owner.DeepCopy()
+	obj := &Reconciler{
+		BaseClusterReconciler: *reconciler.NewBaseClusterReconciler[*hbasev1alpha1.HbaseClusterSpec](
+			client,
+			schema,
+			owner,
+			owner.GetName(),
+			owner.GetLabels(),
+			owner.GetAnnotations(),
+			&owner.Spec,
+		),
 	}
-
-	return obj, nil
+	return obj
 }

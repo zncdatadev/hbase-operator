@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,7 +16,7 @@ type RestServerSpec struct {
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *MasterConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -32,9 +33,6 @@ type RestServerConfigSpec struct {
 	Affinity *corev1.Affinity `json:"affinity"`
 
 	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
@@ -48,7 +46,7 @@ type RestServerConfigSpec struct {
 	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Resources *ResourcesSpec `json:"resources,omitempty"`
+	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
 }
 
 type RestServerConfigOverrideSpec struct {
@@ -57,16 +55,16 @@ type RestServerConfigOverrideSpec struct {
 type RestServerRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=1
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Config *MasterConfigSpec `json:"config,omitempty"`
+	Config *RestServerConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RestServerConfigOverrideSpec `json:"configOverrides,omitempty"`

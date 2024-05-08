@@ -1,4 +1,4 @@
-package master
+package restserver
 
 import (
 	"context"
@@ -13,13 +13,11 @@ import (
 )
 
 var (
-	logger = ctrl.Log.WithName("controller").WithName("master")
+	logger = ctrl.Log.WithName("controller").WithName("regionServer")
 )
 
-var _ reconciler.RoleReconciler = &Reconciler{}
-
 type Reconciler struct {
-	reconciler.BaseRoleReconciler[*hbasev1alph1.MasterSpec]
+	reconciler.BaseRoleReconciler[*hbasev1alph1.RestServerSpec]
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 }
 
@@ -36,7 +34,7 @@ func (m *Reconciler) RegisterResources(ctx context.Context) error {
 	return nil
 }
 
-func (m *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.MasterRoleGroupSpec) error {
+func (m *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.RestServerRoleGroupSpec) error {
 	mergedRoleGroup := roleGroup.DeepCopy()
 	m.MergeRoleGroup(&mergedRoleGroup)
 
@@ -87,7 +85,7 @@ func NewReconciler(
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
 	imageSpec *hbasev1alph1.ImageSpec,
 	name string,
-	spec *hbasev1alph1.MasterSpec,
+	spec *hbasev1alph1.RestServerSpec,
 ) *Reconciler {
 
 	image := image.Image{
@@ -97,7 +95,7 @@ func NewReconciler(
 	}
 
 	return &Reconciler{
-		BaseRoleReconciler: *reconciler.NewBaseRoleReconciler(
+		BaseRoleReconciler: *reconciler.NewBaseRoleReconciler[*hbasev1alph1.RestServerSpec](
 			client,
 			schema,
 			ownerReference,
