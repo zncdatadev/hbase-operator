@@ -48,10 +48,10 @@ type HbaseClusterSpec struct {
 type ClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Required
-	ZookeeperConfigMapName string `json:"zookeeperConfigMapName,omitempty"`
+	ZookeeperConfigMap string `json:"zookeeperConfigMap,omitempty"`
 
 	// +kubebuilder:validation:Required
-	HdfsConfigMapName string `json:"hdfsConfigMapName,omitempty"`
+	HdfsConfigMap string `json:"hdfsConfigMap,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ListenerClass string `json:"listenerClass,omitempty"`

@@ -1,4 +1,4 @@
-package master
+package restserver
 
 import (
 	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
@@ -12,7 +12,7 @@ import (
 var _ reconciler.Reconciler = &StatefulSetReconciler{}
 
 type StatefulSetReconciler struct {
-	reconciler.StatefulSetReconciler[*hbasev1alph1.MasterRoleGroupSpec]
+	reconciler.StatefulSetReconciler[*hbasev1alph1.RestServerRoleGroupSpec]
 }
 
 type StatefulSetBuilder struct {
@@ -59,7 +59,7 @@ func NewStatefulSetReconciler(
 
 	image image.Image,
 
-	spec *hbasev1alph1.MasterRoleGroupSpec,
+	spec *hbasev1alph1.RestServerRoleGroupSpec,
 
 ) *StatefulSetReconciler {
 	b := NewStatefulSetBuilder(

@@ -1,12 +1,14 @@
 package builder
 
 import (
+	"context"
+
 	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/pkg/image"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,7 +16,7 @@ type IStatefulSetBuilder interface {
 	Builder
 
 	GetObjectMeta() metav1.ObjectMeta
-	GetContaiers() []corev1.Container
+	GetContainers() []corev1.Container
 	GetInitContainers() []corev1.Container
 	GetVolumes() []corev1.Volume
 	GetVolumesMounts() []corev1.VolumeMount
@@ -22,50 +24,56 @@ type IStatefulSetBuilder interface {
 	GetTerminationGracePeriodSeconds() *int64
 	GetAffinity() *corev1.Affinity
 	GetTolerations() []corev1.Toleration
-	GetClusterOperation() *apiv1alpha1.ClusterOperationSpec
-	GetResourceRequirment() corev1.ResourceRequirements
+	GetEnvOverrides() map[string]string
+	GetCommandOverrides() []string
+	GetResourceRequirement() corev1.ResourceRequirements
 }
 
 var _ IStatefulSetBuilder = &BaseStatefulSetBuilder{}
 
 type BaseStatefulSetBuilder struct {
 	BaseResourceBuilder
-
-	Replccas    *int32
-	ServiceName string
+	ClusterOperation *apiv1alpha1.ClusterOperationSpec
+	EnvOverrides     map[string]string
+	CommandOverrides []string
+	Replicas         *int32
+	Image            image.Image
+	ServiceName      string
 }
 
 func NewBaseStatefulSetBuilder(
 	client client.Client,
-	schema *runtime.Scheme,
-	owner runtime.Object,
 	name string,
+	namespace string,
 	labels map[string]string,
 	annotations map[string]string,
-	clusterOperation *apiv1alpha1.ClusterOperationSpec,
+	envOverrides map[string]string,
+	CommandOverrides []string,
 	replicas *int32,
+	Image image.Image,
 	serviceName string,
 ) *BaseStatefulSetBuilder {
 	return &BaseStatefulSetBuilder{
 		BaseResourceBuilder: BaseResourceBuilder{
-			Client:           client,
-			Schema:           schema,
-			OwnerReference:   owner,
-			Name:             name,
-			Labels:           labels,
-			Annotations:      annotations,
-			ClusterOperation: clusterOperation,
+			Client:      client,
+			Name:        name,
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
-		Replccas:    replicas,
-		ServiceName: serviceName,
+		EnvOverrides:     envOverrides,
+		CommandOverrides: CommandOverrides,
+		Replicas:         replicas,
+		Image:            Image,
+		ServiceName:      serviceName,
 	}
 }
 
-func (b *BaseStatefulSetBuilder) Build() (client.Object, error) {
+func (b *BaseStatefulSetBuilder) Build(ctx context.Context) (client.Object, error) {
 	obj := &appv1.StatefulSet{
 		ObjectMeta: b.GetObjectMeta(),
 		Spec: appv1.StatefulSetSpec{
-			Replicas: b.Replccas,
+			Replicas: b.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: b.GetLabels(),
 			},
@@ -74,7 +82,7 @@ func (b *BaseStatefulSetBuilder) Build() (client.Object, error) {
 					Labels: b.GetLabels(),
 				},
 				Spec: corev1.PodSpec{
-					Containers:     b.GetContaiers(),
+					Containers:     b.GetContainers(),
 					InitContainers: b.GetInitContainers(),
 					Volumes:        b.GetVolumes(),
 					Affinity:       b.GetAffinity(),
@@ -90,7 +98,7 @@ func (b *BaseStatefulSetBuilder) Build() (client.Object, error) {
 }
 
 func (b *BaseStatefulSetBuilder) GetReplicas() *int32 {
-	return b.Replccas
+	return b.Replicas
 }
 
 func (b *BaseStatefulSetBuilder) GetServiceName() string {
@@ -99,16 +107,21 @@ func (b *BaseStatefulSetBuilder) GetServiceName() string {
 func (b *BaseStatefulSetBuilder) GetObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:        b.Name,
+		Namespace:   b.GetNamespace(),
 		Labels:      b.GetLabels(),
 		Annotations: b.GetAnnotations(),
 	}
 }
 
-func (b *BaseResourceBuilder) GetClusterOperation() *apiv1alpha1.ClusterOperationSpec {
-	return b.ClusterOperation
+func (b *BaseStatefulSetBuilder) GetEnvOverrides() map[string]string {
+	return b.EnvOverrides
 }
 
-func (b *BaseStatefulSetBuilder) GetContaiers() []corev1.Container {
+func (b *BaseStatefulSetBuilder) GetCommandOverrides() []string {
+	return b.CommandOverrides
+}
+
+func (b *BaseStatefulSetBuilder) GetContainers() []corev1.Container {
 	panic("Not implemented")
 }
 
@@ -141,47 +154,47 @@ func (b *BaseStatefulSetBuilder) GetTolerations() []corev1.Toleration {
 	panic("Not implemented")
 }
 
-func (b *BaseStatefulSetBuilder) GetResourceRequirment() corev1.ResourceRequirements {
+func (b *BaseStatefulSetBuilder) GetResourceRequirement() corev1.ResourceRequirements {
 	panic("Not implemented")
 }
 
 type GenericStatefulSetBuilder struct {
 	BaseStatefulSetBuilder
-
-	Image string
 }
 
 func NewGenericStatefulSetBuilder(
 	client client.Client,
-	schema *runtime.Scheme,
-	owner runtime.Object,
 	name string,
+	namespace string,
 	labels map[string]string,
 	annotations map[string]string,
-	clusterOperation *apiv1alpha1.ClusterOperationSpec,
+	envOverrides map[string]string,
+	CommandOverrides []string,
+	Image image.Image,
 	replicas *int32, serviceName string,
 ) *GenericStatefulSetBuilder {
 	return &GenericStatefulSetBuilder{
 		BaseStatefulSetBuilder: *NewBaseStatefulSetBuilder(
 			client,
-			schema,
-			owner,
 			name,
+			namespace,
 			labels,
 			annotations,
-			clusterOperation,
+			envOverrides,
+			CommandOverrides,
 			replicas,
+			Image,
 			serviceName,
 		),
 	}
 }
 
-func (b *GenericStatefulSetBuilder) GetContaiers() []corev1.Container {
+func (b *GenericStatefulSetBuilder) GetContainers() []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:      b.GetName(),
-			Image:     b.Image,
-			Resources: b.GetResourceRequirment(),
+			Image:     b.Image.GetImageTag(),
+			Resources: b.GetResourceRequirement(),
 		},
 	}
 }
@@ -214,7 +227,7 @@ func (b *GenericStatefulSetBuilder) GetTolerations() []corev1.Toleration {
 	return []corev1.Toleration{}
 }
 
-func (b *GenericStatefulSetBuilder) GetResourceRequirment() corev1.ResourceRequirements {
+func (b *GenericStatefulSetBuilder) GetResourceRequirement() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("100m"),

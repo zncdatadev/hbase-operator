@@ -10,12 +10,12 @@ type RegionServerSpec struct {
 	Config *RegionConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Required
-	RoleGroups map[string]RegonRoleGroupSpec `json:"roleGroups,omitempty"`
+	RoleGroups map[string]RegionServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -50,10 +50,10 @@ type RegionConfigSpec struct {
 
 type RegionConfigOverrideSpec struct{}
 
-type RegonRoleGroupSpec struct {
+type RegionServerRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=1
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Config *RegionConfigSpec `json:"config,omitempty"`
@@ -62,7 +62,7 @@ type RegonRoleGroupSpec struct {
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandArgsOverrides []string `json:"commandArgsOverrides,omitempty"`
+	CommandOverrides []string `json:"commandOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`

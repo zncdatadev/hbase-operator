@@ -36,11 +36,11 @@ spec:
             properties:
               clusterConfig:
                 properties:
-                  hdfsConfigMapName:
+                  hdfsConfigMap:
                     type: string
                   listenerClass:
                     type: string
-                  zookeeperConfigMapName:
+                  zookeeperConfigMap:
                     type: string
                 type: object
               clusterOperation:
@@ -69,7 +69,7 @@ spec:
                 type: object
               master:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -1154,7 +1154,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
@@ -2347,7 +2347,7 @@ spec:
                 type: object
               regionServer:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -3432,7 +3432,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
@@ -4625,7 +4625,7 @@ spec:
                 type: object
               restServer:
                 properties:
-                  commandArgsOverrides:
+                  commandOverrides:
                     items:
                       type: string
                     type: array
@@ -5710,7 +5710,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandArgsOverrides:
+                        commandOverrides:
                           items:
                             type: string
                           type: array
