@@ -6,9 +6,7 @@ import (
 
 	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	"github.com/zncdata-labs/hbase-operator/pkg/image"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -28,23 +26,15 @@ type BaseClusterReconciler[T AnySpec] struct {
 }
 
 func NewBaseClusterReconciler[T AnySpec](
-	client client.Client,
-	schema *runtime.Scheme,
-	ownerReference client.Object,
+	client ResourceClient,
 	name string,
-	labels map[string]string,
-	annotations map[string]string,
 	spec T,
 ) *BaseClusterReconciler[T] {
 	return &BaseClusterReconciler[T]{
 		BaseReconciler: BaseReconciler[T]{
-			Client:         client,
-			Schema:         schema,
-			OwnerReference: ownerReference,
-			Name:           name,
-			Labels:         labels,
-			Annotations:    annotations,
-			Spec:           spec,
+			Client: client,
+			Name:   name,
+			Spec:   spec,
 		},
 	}
 }
@@ -141,12 +131,8 @@ func (b *BaseRoleReconciler[T]) Ready() Result {
 }
 
 func NewBaseRoleReconciler[T AnySpec](
-	client client.Client,
-	schema *runtime.Scheme,
-	ownerReference client.Object,
+	client ResourceClient,
 	name string,
-	labels map[string]string,
-	annotations map[string]string,
 	clusterOperation *apiv1alpha1.ClusterOperationSpec,
 	image image.Image,
 	spec T,
@@ -154,11 +140,7 @@ func NewBaseRoleReconciler[T AnySpec](
 	return &BaseRoleReconciler[T]{
 		BaseClusterReconciler: *NewBaseClusterReconciler[T](
 			client,
-			schema,
-			ownerReference,
 			name,
-			labels,
-			annotations,
 			spec,
 		),
 		ClusterOperation: clusterOperation,

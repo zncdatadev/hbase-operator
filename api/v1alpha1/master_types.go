@@ -13,7 +13,7 @@ type MasterSpec struct {
 	RoleGroups map[string]MasterRoleGroupSpec `json:"roleGroups,omitempty"`
 
 	// +kubebuilder:validation:Required
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`
@@ -28,6 +28,11 @@ type MasterSpec struct {
 	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }
 
+//
+//func (s *MasterSpec) GetRoleGroups() map[string]interface{} {
+//	panic("implement me")
+//}
+
 type MasterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Affinity *corev1.Affinity `json:"affinity"`
@@ -36,14 +41,14 @@ type MasterConfigSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// Use time.ParseDuration to parse the string
 	// +kubebuilder:validation:Optional
 	GracefulShutdownTimeout *string `json:"gracefulShutdownTimeout,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
+	Logging *apiv1alpha1.ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
@@ -61,7 +66,7 @@ type MasterRoleGroupSpec struct {
 	Config *MasterConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`

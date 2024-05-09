@@ -4,12 +4,11 @@ import (
 	"context"
 
 	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/internal/controller/common"
 	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	"github.com/zncdata-labs/hbase-operator/pkg/image"
 	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -21,12 +20,12 @@ type Reconciler struct {
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 }
 
-func (m *Reconciler) RegisterResources(ctx context.Context) error {
-	for name, roleGroup := range m.Spec.RoleGroups {
+func (r *Reconciler) RegisterResources(ctx context.Context) error {
+	for name, roleGroup := range r.Spec.RoleGroups {
 		mergedRoleGroup := roleGroup.DeepCopy()
-		m.MergeRoleGroup(&mergedRoleGroup)
+		r.MergeRoleGroup(&mergedRoleGroup)
 
-		if err := m.RegisterResourceWithRoleGroup(ctx, name, mergedRoleGroup); err != nil {
+		if err := r.RegisterResourceWithRoleGroup(ctx, name, mergedRoleGroup); err != nil {
 			return err
 		}
 		logger.V(1).Info("Master role group registered", "roleGroup", name)
@@ -34,53 +33,42 @@ func (m *Reconciler) RegisterResources(ctx context.Context) error {
 	return nil
 }
 
-func (m *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.RestServerRoleGroupSpec) error {
+func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.RestServerRoleGroupSpec) error {
 	mergedRoleGroup := roleGroup.DeepCopy()
-	m.MergeRoleGroup(&mergedRoleGroup)
+	r.MergeRoleGroup(&mergedRoleGroup)
 
 	statefulSetReconciler := NewStatefulSetReconciler(
-		m.GetClient(),
-		m.GetSchema(),
+		r.GetClient(),
 		name,
-		m.GetLabels(),
-		m.GetAnnotations(),
-		m.GetOwnerReference(),
-		m.GetImage(),
+		r.ClusterConfig,
+		Ports,
+		r.GetImage(),
 		roleGroup,
 	)
-	m.AddResource(statefulSetReconciler)
+	r.AddResource(statefulSetReconciler)
 
-	serviceReconciler := NewServiceReconciler(
-		m.GetClient(),
-		m.GetSchema(),
+	serviceReconciler := common.NewServiceReconciler(
+		r.GetClient(),
 		name,
-		m.GetLabels(),
-		m.GetAnnotations(),
-		m.GetOwnerReference(),
+		Ports,
 		roleGroup,
 	)
-	m.AddResource(serviceReconciler)
+	r.AddResource(serviceReconciler)
 
-	configMapReconciler := NewConfigMapReconciler(
-		m.GetClient(),
-		m.GetSchema(),
+	configMapReconciler := common.NewConfigMapReconciler(
+		r.GetClient(),
 		name,
-		m.GetLabels(),
-		m.GetAnnotations(),
-		m.GetOwnerReference(),
-		m.ClusterConfig,
+		r.ClusterConfig,
 		roleGroup,
 	)
 
-	m.AddResource(configMapReconciler)
+	r.AddResource(configMapReconciler)
 
 	return nil
 }
 
 func NewReconciler(
-	client client.Client,
-	schema *runtime.Scheme,
-	ownerReference client.Object,
+	client reconciler.ResourceClient,
 	clusterOperation *apiv1alpha1.ClusterOperationSpec,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
 	imageSpec *hbasev1alph1.ImageSpec,
@@ -97,11 +85,7 @@ func NewReconciler(
 	return &Reconciler{
 		BaseRoleReconciler: *reconciler.NewBaseRoleReconciler[*hbasev1alph1.RestServerSpec](
 			client,
-			schema,
-			ownerReference,
 			name,
-			ownerReference.GetLabels(),
-			ownerReference.GetAnnotations(),
 			clusterOperation,
 			image,
 			spec,

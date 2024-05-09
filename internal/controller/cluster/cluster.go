@@ -9,8 +9,6 @@ import (
 	"github.com/zncdata-labs/hbase-operator/internal/controller/restserver"
 	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
 	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ reconciler.Reconciler = &Reconciler{}
@@ -26,8 +24,6 @@ func (r *Reconciler) RegisterResources(_ context.Context) error {
 
 	masterReconciler := master.NewReconciler(
 		r.GetClient(),
-		r.GetSchema(),
-		r.GetOwnerReference(),
 		r.ClusterOperation,
 		r.ClusterConfig,
 		r.Image,
@@ -38,8 +34,6 @@ func (r *Reconciler) RegisterResources(_ context.Context) error {
 
 	regionServerReconciler := regionserver.NewReconciler(
 		r.GetClient(),
-		r.GetSchema(),
-		r.GetOwnerReference(),
 		r.ClusterOperation,
 		r.ClusterConfig,
 		r.Image,
@@ -50,8 +44,6 @@ func (r *Reconciler) RegisterResources(_ context.Context) error {
 
 	restServerReconciler := restserver.NewReconciler(
 		r.GetClient(),
-		r.GetSchema(),
-		r.GetOwnerReference(),
 		r.ClusterOperation,
 		r.ClusterConfig,
 		r.Image,
@@ -67,20 +59,14 @@ func (r *Reconciler) Reconcile() reconciler.Result {
 }
 
 func NewClusterReconciler(
-	client client.Client,
-	schema *runtime.Scheme,
-	owner *hbasev1alpha1.HbaseCluster,
+	client reconciler.ResourceClient,
+	instance *hbasev1alpha1.HbaseCluster,
 ) *Reconciler {
-	owner = owner.DeepCopy()
 	obj := &Reconciler{
 		BaseClusterReconciler: *reconciler.NewBaseClusterReconciler[*hbasev1alpha1.HbaseClusterSpec](
 			client,
-			schema,
-			owner,
-			owner.GetName(),
-			owner.GetLabels(),
-			owner.GetAnnotations(),
-			&owner.Spec,
+			client.GetOwnerName(),
+			&instance.Spec,
 		),
 	}
 	return obj
