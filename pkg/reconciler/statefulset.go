@@ -2,18 +2,18 @@ package reconciler
 
 import (
 	"context"
-	"errors"
 
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
+	"github.com/zncdata-labs/hbase-operator/pkg/image"
 	appv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var _ ResourceReconciler[*appv1.StatefulSet] = &StatefulSetReconciler[AnySpec]{}
 
 type StatefulSetReconciler[T AnySpec] struct {
 	BaseResourceReconciler[T]
+	Ports []corev1.ContainerPort
+	Image image.Image
 }
 
 func (s *StatefulSetReconciler[T]) GetSpec() T {
@@ -21,17 +21,7 @@ func (s *StatefulSetReconciler[T]) GetSpec() T {
 }
 
 func (s *StatefulSetReconciler[T]) Build(ctx context.Context) (*appv1.StatefulSet, error) {
-	obj, err := s.Builder.Build(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	statefulSet, ok := obj.(*appv1.StatefulSet)
-	if !ok {
-		return nil, errors.New("invalid type")
-	}
-
-	return statefulSet, nil
+	panic("unimplemented")
 }
 
 func (s *StatefulSetReconciler[T]) Ready() Result {
@@ -47,23 +37,21 @@ func (s *StatefulSetReconciler[T]) AddFinalizer(obj *appv1.StatefulSet) {
 }
 
 func NewStatefulSetReconciler[T AnySpec](
-	client client.Client,
-	schema *runtime.Scheme,
+	client ResourceClient,
 	name string,
-	ownerReference client.Object,
-	builder builder.Builder,
+	image image.Image,
+	ports []corev1.ContainerPort,
 	spec T,
 ) *StatefulSetReconciler[T] {
 	return &StatefulSetReconciler[T]{
 		BaseResourceReconciler: BaseResourceReconciler[T]{
 			BaseReconciler: BaseReconciler[T]{
-				Client:         client,
-				Schema:         schema,
-				OwnerReference: ownerReference,
-				Name:           name,
-				Spec:           spec,
+				Client: client,
+				Name:   name,
+				Spec:   spec,
 			},
-			Builder: builder,
 		},
+		Ports: ports,
+		Image: image,
 	}
 }

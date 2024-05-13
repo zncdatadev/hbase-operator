@@ -13,7 +13,7 @@ type RestServerSpec struct {
 	RoleGroups map[string]RestServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
 	// +kubebuilder:validation:Required
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`
@@ -36,14 +36,14 @@ type RestServerConfigSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// Use time.ParseDuration to parse the string
 	// +kubebuilder:validation:Optional
 	GracefulShutdownTimeout *string `json:"gracefulShutdownTimeout,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Logging *ContainerLoggingSpec `json:"logging,omitempty"`
+	Logging *apiv1alpha1.ContainerLoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
@@ -61,7 +61,7 @@ type RestServerRoleGroupSpec struct {
 	Config *RestServerConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`

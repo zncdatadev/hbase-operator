@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/zncdata-labs/hbase-operator/internal/controller/cluster"
+	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,10 +55,13 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	logger.V(1).Info("Reconcile finished")
+	r.Client.Scheme()
+	client := reconciler.ResourceClient{
+		Client: r.Client,
+	}
 
 	clusterReconciler := cluster.NewClusterReconciler(
-		r.Client,
-		r.Scheme,
+		client,
 		instance,
 	)
 
