@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/zncdata-labs/hbase-operator/internal/controller/cluster"
-	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
+	client2 "github.com/zncdata-labs/hbase-operator/pkg/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,21 +47,23 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	logger.V(1).Info("Reconciling HbaseCluster")
 
-	// Fetch the HbaseCluster instance
 	instance := &hbasev1alpha1.HbaseCluster{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) == nil {
+			logger.V(1).Info("HbaseCluster not found, may have been deleted")
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
 	}
+	logger.V(1).Info("HbaseCluster found", "namespace", instance.Namespace, "name", instance.Name)
 
-	logger.V(1).Info("Reconcile finished")
-	r.Client.Scheme()
-	client := reconciler.ResourceClient{
+	resourceClient := client2.ResourceClient{
 		Client: r.Client,
 	}
 
 	clusterReconciler := cluster.NewClusterReconciler(
-		client,
+		resourceClient,
 		instance,
 	)
 
@@ -69,13 +71,15 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	if result := clusterReconciler.Reconcile(); result.RequeueOrNot() {
+	if result := clusterReconciler.Reconcile(ctx); result.RequeueOrNot() {
 		return result.Result()
 	}
 
 	if result := clusterReconciler.Ready(); result.RequeueOrNot() {
 		return result.Result()
 	}
+
+	logger.V(1).Info("Reconcile finished")
 
 	return ctrl.Result{}, nil
 }

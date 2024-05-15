@@ -2,7 +2,6 @@ package builder
 
 import (
 	"context"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -10,26 +9,26 @@ import (
 
 type ConfigBuilder interface {
 	Builder
-	AddData(key, value string)
-	AddDecodeData(key string, value []byte)
+	AddData(key, value string) ConfigBuilder
+	AddDecodeData(key string, value []byte) ConfigBuilder
 	GetData() map[string]string
 	GetEncodeData() map[string][]byte
 }
 
-var _ ConfigBuilder = &BaseConfigBuilder[corev1.Secret]{}
+var _ ConfigBuilder = &BaseConfigBuilder{}
 
-type BaseConfigBuilder[T corev1.Secret | corev1.ConfigMap] struct {
+type BaseConfigBuilder struct {
 	BaseResourceBuilder
 
 	data map[string]string
 }
 
-func NewConfigBuilder[T corev1.Secret | corev1.ConfigMap](
+func NewBaseConfigBuilder(
 	client client.Client,
 	name, namespace string,
 	labels, annotations map[string]string,
-) *BaseConfigBuilder[T] {
-	return &BaseConfigBuilder[T]{
+) *BaseConfigBuilder {
+	return &BaseConfigBuilder{
 		BaseResourceBuilder: BaseResourceBuilder{
 			Client:      client,
 			Name:        name,
@@ -41,15 +40,17 @@ func NewConfigBuilder[T corev1.Secret | corev1.ConfigMap](
 	}
 }
 
-func (b *BaseConfigBuilder[T]) AddData(key, value string) {
+func (b *BaseConfigBuilder) AddData(key, value string) ConfigBuilder {
 	b.data[key] = value
+	return b
 }
 
-func (b *BaseConfigBuilder[T]) AddDecodeData(key string, value []byte) {
+func (b *BaseConfigBuilder) AddDecodeData(key string, value []byte) ConfigBuilder {
 	b.data[key] = string(value)
+	return b
 }
 
-func (b *BaseConfigBuilder[T]) GetEncodeData() map[string][]byte {
+func (b *BaseConfigBuilder) GetEncodeData() map[string][]byte {
 	data := make(map[string][]byte)
 	for k, v := range b.data {
 		data[k] = []byte(v)
@@ -57,25 +58,54 @@ func (b *BaseConfigBuilder[T]) GetEncodeData() map[string][]byte {
 	return data
 }
 
-func (b *BaseConfigBuilder[T]) GetData() map[string]string {
+func (b *BaseConfigBuilder) GetData() map[string]string {
 	return b.data
 }
 
-func (b *BaseConfigBuilder[T]) Build(_ context.Context) (client.Object, error) {
-	var obj client.Object
-	switch o := any(new(T)).(type) {
-	case *corev1.Secret:
-		obj = &corev1.Secret{
-			ObjectMeta: b.GetObjectMeta(),
-			Data:       b.GetEncodeData(),
-		}
-	case *corev1.ConfigMap:
-		obj = &corev1.ConfigMap{
-			ObjectMeta: b.GetObjectMeta(),
-			Data:       b.GetData(),
-		}
-	default:
-		panic(fmt.Sprintf("invalid type %T, must be *corev1.Secret or *corev1.ConfigMap", o))
+var _ ConfigBuilder = &ConfigMapBuilder{}
+
+type ConfigMapBuilder struct {
+	BaseConfigBuilder
+}
+
+func NewConfigMapBuilder(
+	client client.Client,
+	name, namespace string,
+	labels, annotations map[string]string,
+) *ConfigMapBuilder {
+	return &ConfigMapBuilder{
+		BaseConfigBuilder: *NewBaseConfigBuilder(client, name, namespace, labels, annotations),
+	}
+}
+
+func (b *ConfigMapBuilder) Build(_ context.Context) (client.Object, error) {
+	obj := &corev1.ConfigMap{
+		ObjectMeta: b.GetObjectMeta(),
+		Data:       b.GetData(),
+	}
+	return obj, nil
+}
+
+type SecretBuilder struct {
+	BaseConfigBuilder
+}
+
+var _ ConfigBuilder = &SecretBuilder{}
+
+func NewSecretBuilder(
+	client client.Client,
+	name, namespace string,
+	labels, annotations map[string]string,
+) *SecretBuilder {
+	return &SecretBuilder{
+		BaseConfigBuilder: *NewBaseConfigBuilder(client, name, namespace, labels, annotations),
+	}
+}
+
+func (b *SecretBuilder) Build(_ context.Context) (client.Object, error) {
+	obj := &corev1.Secret{
+		ObjectMeta: b.GetObjectMeta(),
+		Data:       b.GetEncodeData(),
 	}
 	return obj, nil
 }

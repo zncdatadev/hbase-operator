@@ -5,12 +5,18 @@ import (
 )
 
 type ImageSpec struct {
+	Custom string `json:"custom,omitempty"`
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=bitnami/kafka
-	Repository string `json:"repository,omitempty"`
+	// +kubebuilder:default=docker.stackable.tech/stackable/hbase
+	Repo string `json:"repository,omitempty"`
+
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="3.7.0-debian-12-r2"
-	Tag string `json:"tag,omitempty"`
+	KDSVersion string `json:"kdsVersion,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="2.4.17"
+	ProductVersion string `json:"productVersion,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=IfNotPresent
 	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`

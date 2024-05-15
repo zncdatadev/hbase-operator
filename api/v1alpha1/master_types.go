@@ -28,11 +28,6 @@ type MasterSpec struct {
 	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
 }
 
-//
-//func (s *MasterSpec) GetRoleGroups() map[string]interface{} {
-//	panic("implement me")
-//}
-
 type MasterConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	Affinity *corev1.Affinity `json:"affinity"`

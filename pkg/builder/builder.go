@@ -4,7 +4,12 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	logger = ctrl.Log.WithName("builder")
 )
 
 type Builder interface {
@@ -17,7 +22,7 @@ type Builder interface {
 	GetAnnotations() map[string]string
 }
 
-var _ ResourceBuilder = &BaseResourceBuilder{}
+var _ Builder = &BaseResourceBuilder{}
 
 type BaseResourceBuilder struct {
 	Client client.Client
