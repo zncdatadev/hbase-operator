@@ -8,18 +8,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type IServiceBuilder interface {
+type ServiceBuilder interface {
 	Builder
 	AddPort(name string, port int32, protocol corev1.Protocol, targetPort int32)
 	GetPorts() []corev1.ServicePort
 	GetServiceType() corev1.ServiceType
 }
 
-var _ IServiceBuilder = &BaseServiceBuilder{}
+var _ ServiceBuilder = &BaseServiceBuilder{}
 
 type BaseServiceBuilder struct {
 	BaseResourceBuilder
-	ServiceType corev1.ServiceType
 
 	ports []corev1.ServicePort
 }
@@ -38,7 +37,7 @@ func (b *BaseServiceBuilder) GetPorts() []corev1.ServicePort {
 }
 
 func (b *BaseServiceBuilder) GetServiceType() corev1.ServiceType {
-	return b.ServiceType
+	return corev1.ServiceTypeClusterIP
 }
 
 func (b *BaseServiceBuilder) Build(_ context.Context) (client.Object, error) {
@@ -62,7 +61,6 @@ func NewServiceBuilder(
 	labels map[string]string,
 	annotations map[string]string,
 	ports []corev1.ServicePort,
-	serviceType corev1.ServiceType,
 ) *BaseServiceBuilder {
 	return &BaseServiceBuilder{
 		BaseResourceBuilder: BaseResourceBuilder{
@@ -71,7 +69,6 @@ func NewServiceBuilder(
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		ServiceType: serviceType,
-		ports:       ports,
+		ports: ports,
 	}
 }

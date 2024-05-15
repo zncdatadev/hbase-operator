@@ -55,16 +55,20 @@ spec:
                 type: object
               image:
                 properties:
+                  custom:
+                    type: string
+                  kdsVersion:
+                    type: string
+                  productVersion:
+                    default: 2.4.17
+                    type: string
                   pullPolicy:
                     default: IfNotPresent
                     description: PullPolicy describes a policy for if/when to pull
                       a container image
                     type: string
                   repository:
-                    default: bitnami/kafka
-                    type: string
-                  tag:
-                    default: 3.7.0-debian-12-r2
+                    default: docker.stackable.tech/stackable/hbase
                     type: string
                 type: object
               master:
@@ -986,7 +990,7 @@ spec:
                             properties:
                               console:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -1005,7 +1009,7 @@ spec:
                                 type: object
                               file:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -1025,8 +1029,8 @@ spec:
                               loggers:
                                 additionalProperties:
                                   description: LogLevelSpec level mapping example
-                                    |---------------------|-----------------| |  superset
-                                    log level |  zds log level  | |---------------------|-----------------|
+                                    |---------------------|-----------------| |  App
+                                    log level      |  kds log level  | |---------------------|-----------------|
                                     |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                     |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                     |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -2158,7 +2162,7 @@ spec:
                                     console:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -2182,7 +2186,7 @@ spec:
                                     file:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -2207,7 +2211,7 @@ spec:
                                       additionalProperties:
                                         description: LogLevelSpec level mapping example
                                           |---------------------|-----------------|
-                                          |  superset log level |  zds log level  |
+                                          |  App log level      |  kds log level  |
                                           |---------------------|-----------------|
                                           |  CRITICAL           |  FATAL          |
                                           |  ERROR              |  ERROR          |
@@ -3264,7 +3268,7 @@ spec:
                             properties:
                               console:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -3283,7 +3287,7 @@ spec:
                                 type: object
                               file:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -3303,8 +3307,8 @@ spec:
                               loggers:
                                 additionalProperties:
                                   description: LogLevelSpec level mapping example
-                                    |---------------------|-----------------| |  superset
-                                    log level |  zds log level  | |---------------------|-----------------|
+                                    |---------------------|-----------------| |  App
+                                    log level      |  kds log level  | |---------------------|-----------------|
                                     |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                     |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                     |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -4436,7 +4440,7 @@ spec:
                                     console:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -4460,7 +4464,7 @@ spec:
                                     file:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -4485,7 +4489,7 @@ spec:
                                       additionalProperties:
                                         description: LogLevelSpec level mapping example
                                           |---------------------|-----------------|
-                                          |  superset log level |  zds log level  |
+                                          |  App log level      |  kds log level  |
                                           |---------------------|-----------------|
                                           |  CRITICAL           |  FATAL          |
                                           |  ERROR              |  ERROR          |
@@ -5542,7 +5546,7 @@ spec:
                             properties:
                               console:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -5561,7 +5565,7 @@ spec:
                                 type: object
                               file:
                                 description: LogLevelSpec level mapping example |---------------------|-----------------|
-                                  |  superset log level |  zds log level  | |---------------------|-----------------|
+                                  |  App log level      |  kds log level  | |---------------------|-----------------|
                                   |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                   |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                   |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -5581,8 +5585,8 @@ spec:
                               loggers:
                                 additionalProperties:
                                   description: LogLevelSpec level mapping example
-                                    |---------------------|-----------------| |  superset
-                                    log level |  zds log level  | |---------------------|-----------------|
+                                    |---------------------|-----------------| |  App
+                                    log level      |  kds log level  | |---------------------|-----------------|
                                     |  CRITICAL           |  FATAL          | |  ERROR              |  ERROR          |
                                     |  WARNING            |  WARN           | |  INFO               |  INFO           |
                                     |  DEBUG              |  DEBUG          | |  DEBUG              |  TRACE          |
@@ -6714,7 +6718,7 @@ spec:
                                     console:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -6738,7 +6742,7 @@ spec:
                                     file:
                                       description: LogLevelSpec level mapping example
                                         |---------------------|-----------------|
-                                        |  superset log level |  zds log level  |
+                                        |  App log level      |  kds log level  |
                                         |---------------------|-----------------|
                                         |  CRITICAL           |  FATAL          |
                                         |  ERROR              |  ERROR          |
@@ -6763,7 +6767,7 @@ spec:
                                       additionalProperties:
                                         description: LogLevelSpec level mapping example
                                           |---------------------|-----------------|
-                                          |  superset log level |  zds log level  |
+                                          |  App log level      |  kds log level  |
                                           |---------------------|-----------------|
                                           |  CRITICAL           |  FATAL          |
                                           |  ERROR              |  ERROR          |

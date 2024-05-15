@@ -21,15 +21,15 @@ type StorageResourceSpec struct {
 
 type CPUResource struct {
 	// +kubebuilder:validation:Optional
-	Max *resource.Quantity `json:"max,omitempty"`
+	Max resource.Quantity `json:"max,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Min *resource.Quantity `json:"min,omitempty"`
+	Min resource.Quantity `json:"min,omitempty"`
 }
 
 type MemoryResource struct {
 	// +kubebuilder:validation:Optional
-	Limit *resource.Quantity `json:"limit,omitempty"`
+	Limit resource.Quantity `json:"limit,omitempty"`
 }
 
 type StorageResource struct {

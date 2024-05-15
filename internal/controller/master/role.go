@@ -5,8 +5,7 @@ import (
 
 	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
 	"github.com/zncdata-labs/hbase-operator/internal/controller/common"
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/image"
+	"github.com/zncdata-labs/hbase-operator/pkg/client"
 	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -25,7 +24,7 @@ type Reconciler struct {
 func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	for name, roleGroup := range r.Spec.RoleGroups {
 		mergedRoleGroup := roleGroup.DeepCopy()
-		r.MergeRoleGroup(&mergedRoleGroup)
+		r.MergeRoleGroupSpec(&mergedRoleGroup)
 
 		if err := r.RegisterResourceWithRoleGroup(ctx, name, mergedRoleGroup); err != nil {
 			return err
@@ -36,60 +35,55 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 }
 
 func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name string, roleGroup *hbasev1alph1.MasterRoleGroupSpec) error {
-	mergedRoleGroup := roleGroup.DeepCopy()
-	r.MergeRoleGroup(&mergedRoleGroup)
 
+	roleGroupInfo := reconciler.RoleGroupInfo{
+		RoleInfo:            r.RoleInfo,
+		Name:                name,
+		Replicas:            roleGroup.Replicas,
+		PodDisruptionBudget: roleGroup.PodDisruptionBudget,
+		CommandOverrides:    roleGroup.CommandOverrides,
+		EnvOverrides:        roleGroup.EnvOverrides,
+		//PodOverrides:        roleGroup.PodOverrides,	TODO: Uncomment this line
+	}
 	statefulSetReconciler := NewStatefulSetReconciler(
 		r.GetClient(),
-		name,
 		r.ClusterConfig,
+		roleGroupInfo,
 		Ports,
-		r.GetImage(),
 		roleGroup,
 	)
 	r.AddResource(statefulSetReconciler)
 
 	serviceReconciler := common.NewServiceReconciler(
 		r.GetClient(),
-		name,
+		roleGroupInfo.GetFullName(),
 		Ports,
 		roleGroup,
 	)
 	r.AddResource(serviceReconciler)
 
-	configMapReconciler := common.NewConfigMapReconciler(
+	configMapReconciler := common.NewConfigMapReconciler[*hbasev1alph1.MasterRoleGroupSpec](
 		r.GetClient(),
-		name,
+		roleGroupInfo.GetFullName(),
 		r.ClusterConfig,
 		roleGroup,
 	)
 
 	r.AddResource(configMapReconciler)
-
 	return nil
 }
 
 func NewReconciler(
-	client reconciler.ResourceClient,
-	clusterOperation *apiv1alpha1.ClusterOperationSpec,
+	client client.ResourceClient,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
-	imageSpec *hbasev1alph1.ImageSpec,
-	name string,
+	roleInfo reconciler.RoleInfo,
 	spec *hbasev1alph1.MasterSpec,
 ) *Reconciler {
-
-	i := image.Image{
-		Repository: imageSpec.Repository,
-		Tag:        imageSpec.Tag,
-		PullPolicy: imageSpec.PullPolicy,
-	}
 
 	return &Reconciler{
 		BaseRoleReconciler: *reconciler.NewBaseRoleReconciler(
 			client,
-			name,
-			clusterOperation,
-			i,
+			roleInfo,
 			spec,
 		),
 		ClusterConfig: clusterConfig,

@@ -5,7 +5,9 @@ import (
 	"reflect"
 
 	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/image"
+	"github.com/zncdata-labs/hbase-operator/pkg/client"
+	"github.com/zncdata-labs/hbase-operator/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -15,6 +17,8 @@ var (
 
 type ClusterReconciler interface {
 	Reconciler
+	GetClusterOperation() *apiv1alpha1.ClusterOperationSpec
+	GetImage() util.Image
 	GetResources() []Reconciler
 	AddResource(resource Reconciler)
 	RegisterResources(ctx context.Context) error
@@ -22,20 +26,22 @@ type ClusterReconciler interface {
 
 type BaseClusterReconciler[T AnySpec] struct {
 	BaseReconciler[T]
-	resources []Reconciler
+	ClusterInfo ClusterInfo
+	resources   []Reconciler
 }
 
 func NewBaseClusterReconciler[T AnySpec](
-	client ResourceClient,
-	name string,
+	client client.ResourceClient,
+	clusterInfo ClusterInfo,
 	spec T,
 ) *BaseClusterReconciler[T] {
 	return &BaseClusterReconciler[T]{
 		BaseReconciler: BaseReconciler[T]{
 			Client: client,
-			Name:   name,
+			Name:   clusterInfo.Name,
 			Spec:   spec,
 		},
+		ClusterInfo: clusterInfo,
 	}
 }
 
@@ -51,22 +57,18 @@ func (r *BaseClusterReconciler[T]) RegisterResources(ctx context.Context) error 
 	panic("unimplemented")
 }
 
-func (b *BaseClusterReconciler[T]) Reconcile() Result {
-	for _, resource := range b.resources {
-		result := resource.Reconcile()
+func (r *BaseClusterReconciler[T]) Reconcile(ctx context.Context) Result {
+	for _, resource := range r.resources {
+		result := resource.Reconcile(ctx)
 		if result.RequeueOrNot() {
 			return result
 		}
 	}
 	return NewResult(false, 0, nil)
-
 }
 
 type RoleReconciler interface {
-	Reconciler
-
-	GetClusterOperation() *apiv1alpha1.ClusterOperationSpec
-	GetImage() image.Image
+	ClusterReconciler
 }
 
 var _ RoleReconciler = &BaseRoleReconciler[AnySpec]{}
@@ -74,15 +76,14 @@ var _ RoleReconciler = &BaseRoleReconciler[AnySpec]{}
 type BaseRoleReconciler[T AnySpec] struct {
 	BaseClusterReconciler[T]
 
-	ClusterOperation *apiv1alpha1.ClusterOperationSpec
-	Image            image.Image
+	RoleInfo RoleInfo
 }
 
-// MergeRoleGroup
+// MergeRoleGroupSpec
 // merge right to left, if field of right not exist in left, add it to left.
 // else skip it.
 // merge will modify left, so left must be a pointer.
-func (b *BaseRoleReconciler[T]) MergeRoleGroup(roleGroup any) {
+func (b *BaseRoleReconciler[T]) MergeRoleGroupSpec(roleGroup any) {
 	leftValue := reflect.ValueOf(roleGroup)
 	rightValue := reflect.ValueOf(b.Spec)
 
@@ -114,11 +115,11 @@ func (b *BaseRoleReconciler[T]) MergeRoleGroup(roleGroup any) {
 }
 
 func (b *BaseRoleReconciler[T]) GetClusterOperation() *apiv1alpha1.ClusterOperationSpec {
-	return b.ClusterOperation
+	return b.RoleInfo.ClusterOperation
 }
 
-func (b *BaseRoleReconciler[T]) GetImage() image.Image {
-	return b.Image
+func (b *BaseRoleReconciler[T]) GetImage() util.Image {
+	return b.RoleInfo.Image
 }
 
 func (b *BaseRoleReconciler[T]) Ready() Result {
@@ -131,19 +132,47 @@ func (b *BaseRoleReconciler[T]) Ready() Result {
 }
 
 func NewBaseRoleReconciler[T AnySpec](
-	client ResourceClient,
-	name string,
-	clusterOperation *apiv1alpha1.ClusterOperationSpec,
-	image image.Image,
+	client client.ResourceClient,
+	roleInfo RoleInfo,
 	spec T,
 ) *BaseRoleReconciler[T] {
 	return &BaseRoleReconciler[T]{
 		BaseClusterReconciler: *NewBaseClusterReconciler[T](
 			client,
-			name,
+			roleInfo.ClusterInfo,
 			spec,
 		),
-		ClusterOperation: clusterOperation,
-		Image:            image,
+		RoleInfo: roleInfo,
 	}
+}
+
+type ClusterInfo struct {
+	Name             string
+	Namespace        string
+	ClusterOperation *apiv1alpha1.ClusterOperationSpec
+	Image            util.Image
+}
+
+type RoleInfo struct {
+	ClusterInfo
+	Name string
+}
+
+func (r *RoleInfo) GetFullName() string {
+	return r.ClusterInfo.Name + "-" + r.Name
+}
+
+type RoleGroupInfo struct {
+	RoleInfo
+	Name     string
+	Replicas *int32
+
+	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec
+	CommandOverrides    []string
+	EnvOverrides        map[string]string
+	PodOverrides        *corev1.PodTemplateSpec
+}
+
+func (r *RoleGroupInfo) GetFullName() string {
+	return r.RoleInfo.GetFullName() + "-" + r.Name
 }

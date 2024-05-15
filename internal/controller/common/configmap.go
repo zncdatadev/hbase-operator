@@ -4,6 +4,8 @@ import (
 	"context"
 
 	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	"github.com/zncdata-labs/hbase-operator/pkg/builder"
+	client2 "github.com/zncdata-labs/hbase-operator/pkg/client"
 	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
 	"github.com/zncdata-labs/hbase-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -15,20 +17,20 @@ const (
 	LogKey   = "log4j.properties"
 )
 
-var _ reconciler.ResourceReconciler[*corev1.ConfigMap] = &ConfigMapReconciler{}
+var _ reconciler.ResourceReconciler[builder.ConfigBuilder] = &ConfigMapReconciler[reconciler.AnySpec]{}
 
-type ConfigMapReconciler struct {
-	reconciler.BaseResourceReconciler[any]
+type ConfigMapReconciler[T reconciler.AnySpec] struct {
+	reconciler.BaseResourceReconciler[T, builder.ConfigBuilder]
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 
 	data map[string]string
 }
 
-func (r *ConfigMapReconciler) AddData(key, value string) {
+func (r *ConfigMapReconciler[T]) AddData(key, value string) {
 	r.data[key] = value
 }
 
-func (r *ConfigMapReconciler) GetZKZnodeConfig(ctx context.Context) (*util.ZnodeConfiguration, error) {
+func (r *ConfigMapReconciler[T]) GetZKZnodeConfig(ctx context.Context) (*util.ZnodeConfiguration, error) {
 	obj := &corev1.ConfigMap{}
 	name := r.ClusterConfig.ZookeeperConfigMap
 	namespace := r.Client.GetOwnerNamespace()
@@ -39,12 +41,12 @@ func (r *ConfigMapReconciler) GetZKZnodeConfig(ctx context.Context) (*util.Znode
 	return &util.ZnodeConfiguration{ConfigMap: obj}, nil
 }
 
-func (r *ConfigMapReconciler) AddLogConfig() error {
+func (r *ConfigMapReconciler[T]) AddLogConfig() error {
 	r.AddData(LogKey, "")
 	return nil
 }
 
-func (r *ConfigMapReconciler) AddHbaseConfig(znode *util.ZnodeConfiguration) error {
+func (r *ConfigMapReconciler[T]) AddHbaseConfig(znode *util.ZnodeConfiguration) error {
 
 	configuration := util.XMLConfiguration{}
 
@@ -79,11 +81,11 @@ func (r *ConfigMapReconciler) AddHbaseConfig(znode *util.ZnodeConfiguration) err
 	return nil
 }
 
-func (r *ConfigMapReconciler) OverrideHbaseConfig(_ *util.XMLConfiguration) error {
+func (r *ConfigMapReconciler[T]) OverrideHbaseConfig(_ *util.XMLConfiguration) error {
 	panic("unimplemented")
 }
 
-func (r *ConfigMapReconciler) Build(ctx context.Context) (*corev1.ConfigMap, error) {
+func (r *ConfigMapReconciler[T]) Build(ctx context.Context) (*corev1.ConfigMap, error) {
 
 	znodeConfig, err := r.GetZKZnodeConfig(ctx)
 	if err != nil {
@@ -105,17 +107,27 @@ func (r *ConfigMapReconciler) Build(ctx context.Context) (*corev1.ConfigMap, err
 	return configMap, nil
 }
 
-func NewConfigMapReconciler(
-	client reconciler.ResourceClient,
+func NewConfigMapReconciler[T reconciler.AnySpec](
+	client client2.ResourceClient,
 	roleGroupName string,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
-	spec any,
-) *ConfigMapReconciler {
-	return &ConfigMapReconciler{
-		BaseResourceReconciler: *reconciler.NewBaseResourceReconciler[any](
+	spec T,
+) *ConfigMapReconciler[T] {
+
+	cmBuilder := builder.NewConfigMapBuilder(
+		client,
+		roleGroupName,
+		client.GetOwnerNamespace(),
+		client.GetLabels(),
+		client.GetAnnotations(),
+	)
+
+	return &ConfigMapReconciler[T]{
+		BaseResourceReconciler: *reconciler.NewBaseResourceReconciler[T, builder.ConfigBuilder](
 			client,
 			roleGroupName,
 			spec,
+			cmBuilder,
 		),
 		ClusterConfig: clusterConfig,
 	}
