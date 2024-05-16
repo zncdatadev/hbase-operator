@@ -45,11 +45,8 @@ func NewStatefulSetBuilder(
 	commandOverrides []string,
 ) *StatefulSetBuilder {
 	stsBuilder := builder.NewGenericStatefulSetBuilder(
-		client.Client,
+		client,
 		roleGroupName,
-		client.GetOwnerNamespace(),
-		client.GetLabels(),
-		client.GetAnnotations(),
 		envOverrides,
 		commandOverrides,
 		image,

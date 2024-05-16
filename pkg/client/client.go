@@ -14,7 +14,13 @@ import (
 )
 
 var (
-	clientLogger = ctrl.Log.WithName("resourceClient")
+	clientLogger        = ctrl.Log.WithName("resourceClient")
+	MatchingLabelsNames = []string{
+		"app.kubernetes.io/name",
+		"app.kubernetes.io/instance",
+		"app.kubernetes.io/role-group",
+		"app.kubernetes.io/component",
+	}
 )
 
 type ResourceClient struct {
@@ -22,45 +28,43 @@ type ResourceClient struct {
 
 	OwnerReference client.Object
 
-	labels      map[string]string
-	annotations map[string]string
+	Labels      map[string]string
+	Annotations map[string]string
 }
 
 func (c *ResourceClient) AddLabels(labels map[string]string, override bool) {
-
-	if labels == nil {
-		labels = c.OwnerReference.GetLabels()
-	}
-
-	for k, v := range c.labels {
-		if _, ok := labels[k]; !ok || override {
-			labels[k] = v
+	for k, v := range labels {
+		if _, ok := c.Labels[k]; !ok || override {
+			c.Labels[k] = v
 		}
 	}
-	c.labels = labels
+}
+
+func (c *ResourceClient) GetMatchingLabels() map[string]string {
+
+	matchingLabels := make(map[string]string)
+	for _, label := range MatchingLabelsNames {
+		if value, ok := c.Labels[label]; ok {
+			matchingLabels[label] = value
+		}
+	}
+	return matchingLabels
 }
 
 func (c *ResourceClient) AddAnnotations(annotations map[string]string, override bool) {
-
-	if annotations == nil {
-		annotations = c.OwnerReference.GetAnnotations()
-	}
-
-	for k, v := range c.annotations {
-		if _, ok := annotations[k]; !ok || override {
-			annotations[k] = v
+	for k, v := range annotations {
+		if _, ok := c.Annotations[k]; !ok || override {
+			c.Annotations[k] = v
 		}
 	}
-	c.annotations = annotations
-
 }
 
 func (c *ResourceClient) GetLabels() map[string]string {
-	return c.labels
+	return c.Labels
 }
 
 func (c *ResourceClient) GetAnnotations() map[string]string {
-	return c.annotations
+	return c.Annotations
 }
 
 func (c *ResourceClient) GetOwnerReference() client.Object {

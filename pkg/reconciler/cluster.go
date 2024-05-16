@@ -136,6 +136,14 @@ func NewBaseRoleReconciler[T AnySpec](
 	roleInfo RoleInfo,
 	spec T,
 ) *BaseRoleReconciler[T] {
+
+	client.AddLabels(
+		map[string]string{
+			"app.kubernetes.io/component": roleInfo.Name,
+		},
+		false,
+	)
+
 	return &BaseRoleReconciler[T]{
 		BaseClusterReconciler: *NewBaseClusterReconciler[T](
 			client,

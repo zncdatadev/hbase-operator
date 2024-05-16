@@ -6,7 +6,6 @@ import (
 
 	"github.com/zncdata-labs/hbase-operator/pkg/builder"
 	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,7 +60,6 @@ type ResourceReconciler[B builder.Builder] interface {
 	Reconciler
 	GetBuilder() B
 	ResourceReconcile(ctx context.Context, resource client.Object) Result
-	GetObjectMeta() metav1.ObjectMeta
 }
 
 var _ ResourceReconciler[builder.Builder] = &BaseResourceReconciler[AnySpec, builder.Builder]{}
@@ -73,15 +71,6 @@ type BaseResourceReconciler[T AnySpec, B builder.Builder] struct {
 
 func (r *BaseResourceReconciler[T, B]) GetBuilder() B {
 	return r.Builder
-}
-
-func (r *BaseResourceReconciler[T, B]) GetObjectMeta() metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		Name:        r.Name,
-		Namespace:   r.Client.GetOwnerNamespace(),
-		Labels:      r.Client.GetLabels(),
-		Annotations: r.Client.GetAnnotations(),
-	}
 }
 
 func (r *BaseResourceReconciler[T, B]) ResourceReconcile(ctx context.Context, resource client.Object) Result {
@@ -117,4 +106,14 @@ func NewBaseResourceReconciler[T AnySpec, B builder.Builder](
 		},
 		Builder: builder,
 	}
+}
+
+// NewSimpleResourceReconciler creates a new resource reconciler with a simple builder
+// that does not require a spec, and can not use the spec.
+func NewSimpleResourceReconciler[B builder.Builder](
+	client resourceClient.ResourceClient,
+	name string,
+	builder B,
+) *BaseResourceReconciler[AnySpec, B] {
+	return NewBaseResourceReconciler[AnySpec, B](client, name, nil, builder)
 }

@@ -45,8 +45,17 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name strin
 		EnvOverrides:        roleGroup.EnvOverrides,
 		//PodOverrides:        roleGroup.PodOverrides,	TODO: Uncomment this line
 	}
+
+	resourceClient := r.GetClient()
+	resourceClient.AddLabels(
+		map[string]string{
+			"app.kubernetes.io/role-group": name,
+		},
+		true,
+	)
+
 	statefulSetReconciler := NewStatefulSetReconciler(
-		r.GetClient(),
+		resourceClient,
 		r.ClusterConfig,
 		roleGroupInfo,
 		Ports,
@@ -55,7 +64,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name strin
 	r.AddResource(statefulSetReconciler)
 
 	serviceReconciler := common.NewServiceReconciler(
-		r.GetClient(),
+		resourceClient,
 		roleGroupInfo.GetFullName(),
 		Ports,
 		roleGroup,
@@ -63,7 +72,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, name strin
 	r.AddResource(serviceReconciler)
 
 	configMapReconciler := common.NewConfigMapReconciler[*hbasev1alph1.MasterRoleGroupSpec](
-		r.GetClient(),
+		resourceClient,
 		roleGroupInfo.GetFullName(),
 		r.ClusterConfig,
 		roleGroup,

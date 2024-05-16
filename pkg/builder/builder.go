@@ -3,9 +3,10 @@ package builder
 import (
 	"context"
 
+	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -13,27 +14,21 @@ var (
 )
 
 type Builder interface {
-	Build(ctx context.Context) (client.Object, error)
+	Build(ctx context.Context) (ctrlclient.Object, error)
 	GetObjectMeta() metav1.ObjectMeta
-	GetClient() client.Client
+	GetClient() resourceClient.ResourceClient
 	GetName() string
-	GetNamespace() string
-	GetLabels() map[string]string
-	GetAnnotations() map[string]string
 }
 
 var _ Builder = &BaseResourceBuilder{}
 
 type BaseResourceBuilder struct {
-	Client client.Client
+	Client resourceClient.ResourceClient
 
-	Name        string
-	Namespace   string
-	Labels      map[string]string
-	Annotations map[string]string
+	Name string
 }
 
-func (b *BaseResourceBuilder) GetClient() client.Client {
+func (b *BaseResourceBuilder) GetClient() resourceClient.ResourceClient {
 	return b.Client
 }
 
@@ -41,28 +36,24 @@ func (b *BaseResourceBuilder) GetName() string {
 	return b.Name
 }
 
-func (b *BaseResourceBuilder) GetNamespace() string {
-	return b.Namespace
-}
-
 func (b *BaseResourceBuilder) GetObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:        b.Name,
-		Namespace:   b.Namespace,
-		Labels:      b.Labels,
-		Annotations: b.Annotations,
+		Namespace:   b.Client.GetOwnerNamespace(),
+		Labels:      b.Client.GetLabels(),
+		Annotations: b.Client.GetAnnotations(),
 	}
-
 }
 
-func (b *BaseResourceBuilder) GetLabels() map[string]string {
-	return b.Labels
+// GetObjectMetaWithClusterScope returns the object meta with cluster scope
+func (b *BaseResourceBuilder) GetObjectMetaWithClusterScope() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:        b.Name,
+		Labels:      b.Client.GetLabels(),
+		Annotations: b.Client.GetAnnotations(),
+	}
 }
 
-func (b *BaseResourceBuilder) GetAnnotations() map[string]string {
-	return b.Annotations
-}
-
-func (b *BaseResourceBuilder) Build(ctx context.Context) (client.Object, error) {
+func (b *BaseResourceBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
 	panic("implement me")
 }

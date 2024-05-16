@@ -20,10 +20,10 @@ import (
 	"context"
 
 	"github.com/zncdata-labs/hbase-operator/internal/controller/cluster"
-	client2 "github.com/zncdata-labs/hbase-operator/pkg/client"
+	"github.com/zncdata-labs/hbase-operator/pkg/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
@@ -35,7 +35,7 @@ var (
 
 // HbaseClusterReconciler reconciles a HbaseCluster object
 type HbaseClusterReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme *runtime.Scheme
 }
 
@@ -50,7 +50,7 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	instance := &hbasev1alpha1.HbaseCluster{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
-		if client.IgnoreNotFound(err) == nil {
+		if ctrlclient.IgnoreNotFound(err) == nil {
 			logger.V(1).Info("HbaseCluster not found, may have been deleted")
 			return ctrl.Result{}, nil
 		}
@@ -58,8 +58,14 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 	logger.V(1).Info("HbaseCluster found", "namespace", instance.Namespace, "name", instance.Name)
 
-	resourceClient := client2.ResourceClient{
-		Client: r.Client,
+	resourceClient := client.ResourceClient{
+		Client:         r.Client,
+		OwnerReference: instance,
+		Labels: map[string]string{
+			"app.kubernetes.io/name":       "hbase",
+			"app.kubernetes.io/managed-by": "hbase.zncdata.dev",
+			"app.kubernetes.io/instance":   instance.Name,
+		},
 	}
 
 	clusterReconciler := cluster.NewClusterReconciler(

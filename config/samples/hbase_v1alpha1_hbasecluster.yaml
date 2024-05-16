@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: hbase-operator
   name: hbasecluster-sample
 spec:
-  # TODO(user): Add fields here
+# TODO(user): Add fields here
