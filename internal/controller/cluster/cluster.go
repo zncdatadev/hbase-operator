@@ -19,31 +19,52 @@ type Reconciler struct {
 	ClusterConfig *hbasev1alpha1.ClusterConfigSpec
 }
 
-func (r *Reconciler) RegisterResources(_ context.Context) error {
-	roleInfo := reconciler.RoleInfo{}
+func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	masterReconciler := master.NewReconciler(
 		r.GetClient(),
 		r.ClusterConfig,
-		roleInfo,
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			Name:        "master",
+		},
 		r.Spec.MasterSpec,
 	)
+
+	if err := masterReconciler.RegisterResources(ctx); err != nil {
+		return err
+	}
+
 	r.AddResource(masterReconciler)
 
 	regionServerReconciler := regionserver.NewReconciler(
 		r.GetClient(),
 		r.ClusterConfig,
-		roleInfo,
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			Name:        "regionserver",
+		},
 		r.Spec.RegionServerSpec,
 	)
+	if err := regionServerReconciler.RegisterResources(ctx); err != nil {
+		return err
+	}
+
 	r.AddResource(regionServerReconciler)
 
 	restServerReconciler := restserver.NewReconciler(
 		r.GetClient(),
 		r.ClusterConfig,
-		roleInfo,
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			Name:        "restserver",
+		},
 		r.Spec.RestServerSpec,
 	)
+	if err := restServerReconciler.RegisterResources(ctx); err != nil {
+		return err
+	}
 	r.AddResource(restServerReconciler)
+
 	return nil
 }
 

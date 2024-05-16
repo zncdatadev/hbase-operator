@@ -81,7 +81,9 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result.Result()
 	}
 
-	if result := clusterReconciler.Ready(); result.RequeueOrNot() {
+	logger.Info("Cluster reconciled")
+
+	if result := clusterReconciler.Ready(ctx); result.RequeueOrNot() {
 		return result.Result()
 	}
 

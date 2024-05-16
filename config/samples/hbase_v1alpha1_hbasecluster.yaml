@@ -9,4 +9,17 @@ metadata:
     app.kubernetes.io/created-by: hbase-operator
   name: hbasecluster-sample
 spec:
-# TODO(user): Add fields here
+  image:
+    custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
+  master:
+    roleGroups:
+      default:
+        replicas: 3
+  regionServer:
+    roleGroups:
+      default:
+        replicas: 3
+  restServer:
+    roleGroups:
+      default:
+        replicas: 1

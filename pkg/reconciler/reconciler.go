@@ -7,6 +7,7 @@ import (
 	"github.com/zncdata-labs/hbase-operator/pkg/builder"
 	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -15,7 +16,7 @@ type AnySpec any
 type Reconciler interface {
 	GetClient() resourceClient.ResourceClient
 	Reconcile(ctx context.Context) Result
-	Ready() Result
+	Ready(ctx context.Context) Result
 	GetNameWithSuffix(suffix string) string
 }
 
@@ -44,7 +45,7 @@ func (b *BaseReconciler[T]) GetScheme() *runtime.Scheme {
 	return b.Client.Scheme()
 }
 
-func (b *BaseReconciler[T]) Ready() Result {
+func (b *BaseReconciler[T]) Ready(ctx context.Context) Result {
 	panic("unimplemented")
 }
 
@@ -75,6 +76,10 @@ func (r *BaseResourceReconciler[T, B]) GetBuilder() B {
 
 func (r *BaseResourceReconciler[T, B]) ResourceReconcile(ctx context.Context, resource client.Object) Result {
 
+	if err := ctrl.SetControllerReference(r.Client.OwnerReference, resource, r.Client.Scheme()); err != nil {
+		return NewResult(true, 0, err)
+	}
+
 	if mutation, err := r.Client.CreateOrUpdate(ctx, resource); err != nil {
 		return NewResult(true, 0, err)
 	} else if mutation {
@@ -90,6 +95,10 @@ func (r *BaseResourceReconciler[T, B]) Reconcile(ctx context.Context) Result {
 		return NewResult(true, 0, err)
 	}
 	return r.ResourceReconcile(ctx, resource)
+}
+
+func (r *BaseResourceReconciler[T, B]) Ready(ctx context.Context) Result {
+	return NewResult(false, 0, nil)
 }
 
 func NewBaseResourceReconciler[T AnySpec, B builder.Builder](

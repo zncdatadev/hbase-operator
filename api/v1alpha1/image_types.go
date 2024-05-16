@@ -5,10 +5,12 @@ import (
 )
 
 type ImageSpec struct {
+	// +kubebuilder:validation:Optional
+	
 	Custom string `json:"custom,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=docker.stackable.tech/stackable/hbase
-	Repo string `json:"repository,omitempty"`
+	Repo string `json:"repo,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	KDSVersion string `json:"kdsVersion,omitempty"`

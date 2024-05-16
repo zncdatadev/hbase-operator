@@ -24,7 +24,7 @@ type Reconciler struct {
 func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	for name, roleGroup := range r.Spec.RoleGroups {
 		mergedRoleGroup := roleGroup.DeepCopy()
-		r.MergeRoleGroupSpec(&mergedRoleGroup)
+		r.MergeRoleGroupSpec(mergedRoleGroup)
 
 		if err := r.RegisterResourceWithRoleGroup(ctx, name, mergedRoleGroup); err != nil {
 			return err
