@@ -26,8 +26,8 @@ import (
 
 // HbaseClusterSpec defines the desired state of HbaseCluster
 type HbaseClusterSpec struct {
-	// +kubebuilder:validation:Optional
-	Image *ImageSpec `json:"image,omitempty"`
+	// +kubebuilder:validation:Required
+	Image *ImageSpec `json:"image"`
 
 	// +kubebuilder:validation:Required
 	ClusterConfigSpec *ClusterConfigSpec `json:"clusterConfig,omitempty"`

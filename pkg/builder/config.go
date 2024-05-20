@@ -3,6 +3,7 @@ package builder
 import (
 	"context"
 
+	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,17 +25,13 @@ type BaseConfigBuilder struct {
 }
 
 func NewBaseConfigBuilder(
-	client client.Client,
-	name, namespace string,
-	labels, annotations map[string]string,
+	client resourceClient.ResourceClient,
+	name string,
 ) *BaseConfigBuilder {
 	return &BaseConfigBuilder{
 		BaseResourceBuilder: BaseResourceBuilder{
-			Client:      client,
-			Name:        name,
-			Namespace:   namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Client: client,
+			Name:   name,
 		},
 		data: make(map[string]string),
 	}
@@ -69,21 +66,23 @@ type ConfigMapBuilder struct {
 }
 
 func NewConfigMapBuilder(
-	client client.Client,
-	name, namespace string,
-	labels, annotations map[string]string,
+	client resourceClient.ResourceClient,
+	name string,
 ) *ConfigMapBuilder {
 	return &ConfigMapBuilder{
-		BaseConfigBuilder: *NewBaseConfigBuilder(client, name, namespace, labels, annotations),
+		BaseConfigBuilder: *NewBaseConfigBuilder(client, name),
+	}
+}
+
+func (b *ConfigMapBuilder) GetObject() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: b.GetObjectMeta(),
+		Data:       b.GetData(),
 	}
 }
 
 func (b *ConfigMapBuilder) Build(_ context.Context) (client.Object, error) {
-	obj := &corev1.ConfigMap{
-		ObjectMeta: b.GetObjectMeta(),
-		Data:       b.GetData(),
-	}
-	return obj, nil
+	return b.GetObject(), nil
 }
 
 type SecretBuilder struct {
@@ -93,19 +92,21 @@ type SecretBuilder struct {
 var _ ConfigBuilder = &SecretBuilder{}
 
 func NewSecretBuilder(
-	client client.Client,
-	name, namespace string,
-	labels, annotations map[string]string,
+	client resourceClient.ResourceClient,
+	name string,
 ) *SecretBuilder {
 	return &SecretBuilder{
-		BaseConfigBuilder: *NewBaseConfigBuilder(client, name, namespace, labels, annotations),
+		BaseConfigBuilder: *NewBaseConfigBuilder(client, name),
+	}
+}
+
+func (b *SecretBuilder) GetObject() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: b.GetObjectMeta(),
+		Data:       b.GetEncodeData(),
 	}
 }
 
 func (b *SecretBuilder) Build(_ context.Context) (client.Object, error) {
-	obj := &corev1.Secret{
-		ObjectMeta: b.GetObjectMeta(),
-		Data:       b.GetEncodeData(),
-	}
-	return obj, nil
+	return b.GetObject(), nil
 }

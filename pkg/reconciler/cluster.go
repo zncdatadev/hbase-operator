@@ -57,6 +57,15 @@ func (r *BaseClusterReconciler[T]) RegisterResources(ctx context.Context) error 
 	panic("unimplemented")
 }
 
+func (r *BaseClusterReconciler[T]) Ready(ctx context.Context) Result {
+	for _, resource := range r.resources {
+		if result := resource.Ready(ctx); result.RequeueOrNot() {
+			return result
+		}
+	}
+	return NewResult(false, 0, nil)
+}
+
 func (r *BaseClusterReconciler[T]) Reconcile(ctx context.Context) Result {
 	for _, resource := range r.resources {
 		result := resource.Reconcile(ctx)
@@ -99,16 +108,16 @@ func (b *BaseRoleReconciler[T]) MergeRoleGroupSpec(roleGroup any) {
 
 	for i := 0; i < rightValue.NumField(); i++ {
 		rightField := rightValue.Field(i)
-		rightFieldName := rightValue.Type().Field(i).Name
 
 		if rightField.IsZero() {
 			continue
 		}
-
+		rightFieldName := rightValue.Type().Field(i).Name
 		leftField := leftValue.FieldByName(rightFieldName)
 
-		if !leftField.IsValid() {
-			leftValue.Field(i).Set(rightField)
+		// if field exist in left, add it to left
+		if leftField.IsValid() && leftField.IsZero() {
+			leftValue.Set(rightField)
 			logger.V(5).Info("Merge role group", "field", rightFieldName, "value", rightField)
 		}
 	}
@@ -122,9 +131,9 @@ func (b *BaseRoleReconciler[T]) GetImage() util.Image {
 	return b.RoleInfo.Image
 }
 
-func (b *BaseRoleReconciler[T]) Ready() Result {
+func (b *BaseRoleReconciler[T]) Ready(ctx context.Context) Result {
 	for _, resource := range b.resources {
-		if result := resource.Ready(); result.RequeueOrNot() {
+		if result := resource.Ready(ctx); result.RequeueOrNot() {
 			return result
 		}
 	}
@@ -136,6 +145,14 @@ func NewBaseRoleReconciler[T AnySpec](
 	roleInfo RoleInfo,
 	spec T,
 ) *BaseRoleReconciler[T] {
+
+	client.AddLabels(
+		map[string]string{
+			"app.kubernetes.io/component": roleInfo.Name,
+		},
+		false,
+	)
+
 	return &BaseRoleReconciler[T]{
 		BaseClusterReconciler: *NewBaseClusterReconciler[T](
 			client,

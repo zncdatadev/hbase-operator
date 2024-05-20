@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    banzaicloud.com/last-applied: UEsDBBQACAAIAAAAAAAAAAAAAAAAAAAAAAAIAAAAb3JpZ2luYWzkk7GO2zwQhN9la5G2dDr7/9UmRYoAAS5AmuCKFTVnE6ZIglw5uBh694Ay7DiIcUWaFOmk1Qx3R/vxRCOEBxam7kSOe7hcnjhGfZh6JA9B1jasTBhj8PBCHY2cBYmqOzLrs7A3oI72PWcYNxWtyjxGh7uWkT3vMKj+9WLS370pM+kBx7sWz+O1w11BCg5ql8IUqaMBLzw5obmiW+Ovo6lzKHURn7U58pLlZzV880hPeEGCN8jUfS1/y35Byjb4ewlWx5pd3HNNFfUumMOncsR7OMjikDShIhO8pOAc0qVysH6gjj6U896dZ6W3ElBFky2Odbvlx2bzqDaGjWqbGqo3TauaervBZlv/t/2/pfl5rihHmLLuhOis4UzdQ0UZDkZCKh9GFrP/+Few+MMdzxUJxuhYsAT4h/C+WWihia1HOgNqR94tGAdzQNJZ2By4d9ACs19dX1dLx67Rra636lpuWv2g12+y9/vtSchhSssNOc3zcxluigMLPktiwe51qVeUhWU6L+XI1pV+T1ca19UNmut5/hEAAP//UEsHCHgktM+ZAQAArwQAAFBLAQIUABQACAAIAAAAAAB4JLTPmQEAAK8EAAAIAAAAAAAAAAAAAAAAAAAAAABvcmlnaW5hbFBLBQYAAAAAAQABADYAAADPAQAAAAA=
+  creationTimestamp: "2024-05-16T10:26:51Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: master
+    app.kubernetes.io/instance: hbasecluster-sample
+    app.kubernetes.io/managed-by: hbase.zncdata.dev
+    app.kubernetes.io/name: hbase
+    app.kubernetes.io/role-group: default
+  name: hbasecluster-sample-master-default
+  namespace: default
+  ownerReferences:
+  - apiVersion: hbase.zncdata.dev/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: HbaseCluster
+    name: hbasecluster-sample
+    uid: 047a5265-6cac-421e-bc24-2176e6718794
+  resourceVersion: "537084"
+  uid: cda26b79-9c36-41d1-9a7b-a9e3b56d68b3
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: master
+      app.kubernetes.io/instance: hbasecluster-sample
+      app.kubernetes.io/name: hbase
+      app.kubernetes.io/role-group: default
+  serviceName: ""
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: master
+        app.kubernetes.io/instance: hbasecluster-sample
+        app.kubernetes.io/managed-by: hbase.zncdata.dev
+        app.kubernetes.io/name: hbase
+        app.kubernetes.io/role-group: default
+    spec:
+      containers:
+      - image: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
+        imagePullPolicy: IfNotPresent
+        name: hbasecluster-sample-master-default
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 3
+  collisionCount: 0
+  currentReplicas: 3
+  currentRevision: hbasecluster-sample-master-default-77955ff665
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  updateRevision: hbasecluster-sample-master-default-77955ff665
+  updatedReplicas: 3

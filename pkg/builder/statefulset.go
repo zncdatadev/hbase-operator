@@ -3,11 +3,12 @@ package builder
 import (
 	"context"
 
+	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
 	"github.com/zncdata-labs/hbase-operator/pkg/util"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type StatefulSetBuilder interface {
@@ -34,22 +35,16 @@ type GenericStatefulSetBuilder struct {
 }
 
 func NewGenericStatefulSetBuilder(
-	client client.Client,
+	client resourceClient.ResourceClient,
 	name string,
-	namespace string,
-	labels map[string]string,
-	annotations map[string]string,
 	envOverrides map[string]string,
 	commandOverrides []string,
 	image util.Image,
 ) *GenericStatefulSetBuilder {
 	return &GenericStatefulSetBuilder{
 		BaseResourceBuilder: BaseResourceBuilder{
-			Client:      client,
-			Name:        name,
-			Namespace:   namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Client: client,
+			Name:   name,
 		},
 		EnvOverrides:     envOverrides,
 		CommandOverrides: commandOverrides,
@@ -63,12 +58,12 @@ func (b *GenericStatefulSetBuilder) GetObject() *appv1.StatefulSet {
 			ObjectMeta: b.GetObjectMeta(),
 			Spec: appv1.StatefulSetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: b.Labels,
+					MatchLabels: b.Client.GetMatchingLabels(),
 				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Labels:      b.Labels,
-						Annotations: b.Annotations,
+						Labels:      b.Client.GetLabels(),
+						Annotations: b.Client.GetAnnotations(),
 					},
 				},
 			},
@@ -77,7 +72,7 @@ func (b *GenericStatefulSetBuilder) GetObject() *appv1.StatefulSet {
 	return b.obj
 }
 
-func (b *GenericStatefulSetBuilder) Build(ctx context.Context) (client.Object, error) {
+func (b *GenericStatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
 	obj := b.GetObject()
 
 	if len(obj.Spec.Template.Spec.Containers) == 0 {

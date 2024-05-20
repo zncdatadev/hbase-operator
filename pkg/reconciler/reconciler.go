@@ -6,8 +6,8 @@ import (
 
 	"github.com/zncdata-labs/hbase-operator/pkg/builder"
 	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -16,7 +16,7 @@ type AnySpec any
 type Reconciler interface {
 	GetClient() resourceClient.ResourceClient
 	Reconcile(ctx context.Context) Result
-	Ready() Result
+	Ready(ctx context.Context) Result
 	GetNameWithSuffix(suffix string) string
 }
 
@@ -45,7 +45,7 @@ func (b *BaseReconciler[T]) GetScheme() *runtime.Scheme {
 	return b.Client.Scheme()
 }
 
-func (b *BaseReconciler[T]) Ready() Result {
+func (b *BaseReconciler[T]) Ready(ctx context.Context) Result {
 	panic("unimplemented")
 }
 
@@ -61,7 +61,6 @@ type ResourceReconciler[B builder.Builder] interface {
 	Reconciler
 	GetBuilder() B
 	ResourceReconcile(ctx context.Context, resource client.Object) Result
-	GetObjectMeta() metav1.ObjectMeta
 }
 
 var _ ResourceReconciler[builder.Builder] = &BaseResourceReconciler[AnySpec, builder.Builder]{}
@@ -75,16 +74,11 @@ func (r *BaseResourceReconciler[T, B]) GetBuilder() B {
 	return r.Builder
 }
 
-func (r *BaseResourceReconciler[T, B]) GetObjectMeta() metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		Name:        r.Name,
-		Namespace:   r.Client.GetOwnerNamespace(),
-		Labels:      r.Client.GetLabels(),
-		Annotations: r.Client.GetAnnotations(),
-	}
-}
-
 func (r *BaseResourceReconciler[T, B]) ResourceReconcile(ctx context.Context, resource client.Object) Result {
+
+	if err := ctrl.SetControllerReference(r.Client.OwnerReference, resource, r.Client.Scheme()); err != nil {
+		return NewResult(true, 0, err)
+	}
 
 	if mutation, err := r.Client.CreateOrUpdate(ctx, resource); err != nil {
 		return NewResult(true, 0, err)
@@ -103,6 +97,10 @@ func (r *BaseResourceReconciler[T, B]) Reconcile(ctx context.Context) Result {
 	return r.ResourceReconcile(ctx, resource)
 }
 
+func (r *BaseResourceReconciler[T, B]) Ready(ctx context.Context) Result {
+	return NewResult(false, 0, nil)
+}
+
 func NewBaseResourceReconciler[T AnySpec, B builder.Builder](
 	client resourceClient.ResourceClient,
 	name string,
@@ -117,4 +115,14 @@ func NewBaseResourceReconciler[T AnySpec, B builder.Builder](
 		},
 		Builder: builder,
 	}
+}
+
+// NewSimpleResourceReconciler creates a new resource reconciler with a simple builder
+// that does not require a spec, and can not use the spec.
+func NewSimpleResourceReconciler[B builder.Builder](
+	client resourceClient.ResourceClient,
+	name string,
+	builder B,
+) *BaseResourceReconciler[AnySpec, B] {
+	return NewBaseResourceReconciler[AnySpec, B](client, name, nil, builder)
 }
