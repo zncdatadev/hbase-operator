@@ -3,11 +3,11 @@ package common
 import (
 	"context"
 
-	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
-	"github.com/zncdata-labs/hbase-operator/pkg/client"
-	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
-	"github.com/zncdata-labs/hbase-operator/pkg/util"
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	"github.com/zncdatadev/hbase-operator/pkg/builder"
+	"github.com/zncdatadev/hbase-operator/pkg/client"
+	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
+	"github.com/zncdatadev/hbase-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

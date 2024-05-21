@@ -1,10 +1,10 @@
 package master
 
 import (
-	hbasev1alph1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/internal/controller/common"
-	"github.com/zncdata-labs/hbase-operator/pkg/client"
-	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	"github.com/zncdatadev/hbase-operator/internal/controller/common"
+	"github.com/zncdatadev/hbase-operator/pkg/client"
+	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
 	corev1 "k8s.io/api/core/v1"
 )
 

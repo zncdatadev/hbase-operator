@@ -1,5 +1,5 @@
 /*
-Copyright 2024 zncdata-labs.
+Copyright 2024 zncdatadev.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package controller
 import (
 	"context"
 
-	"github.com/zncdata-labs/hbase-operator/internal/controller/cluster"
-	"github.com/zncdata-labs/hbase-operator/pkg/client"
+	"github.com/zncdatadev/hbase-operator/internal/controller/cluster"
+	"github.com/zncdatadev/hbase-operator/pkg/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	hbasev1alpha1 "github.com/zncdata-labs/hbase-operator/api/v1alpha1"
+	hbasev1alpha1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 )
 
 var (

@@ -1,9 +1,9 @@
 package common
 
 import (
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
-	"github.com/zncdata-labs/hbase-operator/pkg/client"
-	"github.com/zncdata-labs/hbase-operator/pkg/reconciler"
+	"github.com/zncdatadev/hbase-operator/pkg/builder"
+	"github.com/zncdatadev/hbase-operator/pkg/client"
+	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"reflect"
 
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
-	"github.com/zncdata-labs/hbase-operator/pkg/client"
-	"github.com/zncdata-labs/hbase-operator/pkg/util"
+	apiv1alpha1 "github.com/zncdatadev/hbase-operator/pkg/apis/v1alpha1"
+	"github.com/zncdatadev/hbase-operator/pkg/client"
+	"github.com/zncdatadev/hbase-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

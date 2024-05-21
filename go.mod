@@ -1,4 +1,4 @@
-module github.com/zncdata-labs/hbase-operator
+module github.com/zncdatadev/hbase-operator
 
 go 1.21
 
