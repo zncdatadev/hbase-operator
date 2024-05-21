@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zncdata-labs/hbase-operator/pkg/builder"
-	"github.com/zncdata-labs/hbase-operator/pkg/util"
+	"github.com/zncdatadev/hbase-operator/pkg/builder"
+	"github.com/zncdatadev/hbase-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
 

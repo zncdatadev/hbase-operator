@@ -3,7 +3,7 @@ package builder
 import (
 	"context"
 
-	resourceClient "github.com/zncdata-labs/hbase-operator/pkg/client"
+	resourceClient "github.com/zncdatadev/hbase-operator/pkg/client"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	apiv1alpha1 "github.com/zncdata-labs/hbase-operator/pkg/apis/v1alpha1"
+	apiv1alpha1 "github.com/zncdatadev/hbase-operator/pkg/apis/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
