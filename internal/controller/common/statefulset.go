@@ -58,6 +58,15 @@ func NewStatefulSetBuilder(
 	}
 }
 
+// Affinity , if affinity in spec defined, will be used, otherwise default affinity will be used
+func (b *StatefulSetBuilder) Affinity(specAffinity *corev1.Affinity, roleAffinity *corev1.Affinity) {
+	var affinity = specAffinity
+	if specAffinity == nil {
+		affinity = roleAffinity
+	}
+	b.GenericStatefulSetBuilder.AddAffinity(*affinity)
+}
+
 func (b *StatefulSetBuilder) getContainerName() string {
 	var name string
 	s := "["

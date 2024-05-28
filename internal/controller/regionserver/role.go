@@ -87,3 +87,7 @@ func NewReconciler(
 		ClusterConfig: clusterConfig,
 	}
 }
+
+func roleName() string {
+	return "regionserver"
+}
