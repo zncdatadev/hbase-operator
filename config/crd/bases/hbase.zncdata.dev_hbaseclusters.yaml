@@ -67,7 +67,7 @@ spec:
                     description: PullPolicy describes a policy for if/when to pull
                       a container image
                     type: string
-                  repository:
+                  repo:
                     default: docker.stackable.tech/stackable/hbase
                     type: string
                 type: object
@@ -6905,6 +6905,8 @@ spec:
                       type: object
                     type: object
                 type: object
+            required:
+            - image
             type: object
           status:
             description: HbaseClusterStatus defines the observed state of HbaseCluster
