@@ -24,3 +24,7 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+# olm bundle
+bundle.Dockerfile
+bundle
