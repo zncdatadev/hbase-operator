@@ -3,100 +3,109 @@ package cluster
 import (
 	"context"
 
+	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/reconciler"
+	"github.com/zncdatadev/operator-go/pkg/util"
+	corev1 "k8s.io/api/core/v1"
+
 	hbasev1alpha1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/hbase-operator/internal/controller/master"
 	"github.com/zncdatadev/hbase-operator/internal/controller/regionserver"
 	"github.com/zncdatadev/hbase-operator/internal/controller/restserver"
-	"github.com/zncdatadev/hbase-operator/pkg/client"
-	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
-	"github.com/zncdatadev/hbase-operator/pkg/util"
 )
 
 var _ reconciler.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	reconciler.BaseClusterReconciler[*hbasev1alpha1.HbaseClusterSpec]
+	reconciler.BaseCluster[*hbasev1alpha1.HbaseClusterSpec]
 	ClusterConfig *hbasev1alpha1.ClusterConfigSpec
 }
 
-func (r *Reconciler) RegisterResources(ctx context.Context) error {
-	masterReconciler := master.NewReconciler(
-		r.GetClient(),
-		r.ClusterConfig,
-		reconciler.RoleInfo{
-			ClusterInfo: r.ClusterInfo,
-			Name:        "master",
-		},
-		r.Spec.MasterSpec,
-	)
-
-	if err := masterReconciler.RegisterResources(ctx); err != nil {
-		return err
-	}
-
-	r.AddResource(masterReconciler)
-
-	regionServerReconciler := regionserver.NewReconciler(
-		r.GetClient(),
-		r.ClusterConfig,
-		reconciler.RoleInfo{
-			ClusterInfo: r.ClusterInfo,
-			Name:        "regionserver",
-		},
-		r.Spec.RegionServerSpec,
-	)
-	if err := regionServerReconciler.RegisterResources(ctx); err != nil {
-		return err
-	}
-
-	r.AddResource(regionServerReconciler)
-
-	restServerReconciler := restserver.NewReconciler(
-		r.GetClient(),
-		r.ClusterConfig,
-		reconciler.RoleInfo{
-			ClusterInfo: r.ClusterInfo,
-			Name:        "restserver",
-		},
-		r.Spec.RestServerSpec,
-	)
-	if err := restServerReconciler.RegisterResources(ctx); err != nil {
-		return err
-	}
-	r.AddResource(restServerReconciler)
-
-	return nil
-}
-
-func (r *Reconciler) Reconcile(ctx context.Context) reconciler.Result {
-	return r.BaseClusterReconciler.Reconcile(ctx)
-}
-
 func NewClusterReconciler(
-	client client.ResourceClient,
-	instance *hbasev1alpha1.HbaseCluster,
+	client *client.Client,
+	clusterInfo reconciler.ClusterInfo,
+	spec *hbasev1alpha1.HbaseClusterSpec,
 ) *Reconciler {
-	image := util.Image{
-		Custom:         instance.Spec.Image.Custom,
-		Repo:           instance.Spec.Image.Repo,
-		KDSVersion:     instance.Spec.Image.KDSVersion,
-		ProductVersion: instance.Spec.Image.ProductVersion,
-	}
-
-	clusterInfo := reconciler.ClusterInfo{
-		Name:             instance.Name,
-		Namespace:        instance.Namespace,
-		ClusterOperation: instance.Spec.ClusterOperationSpec,
-		Image:            image,
-	}
-
-	obj := &Reconciler{
-		BaseClusterReconciler: *reconciler.NewBaseClusterReconciler[*hbasev1alpha1.HbaseClusterSpec](
+	return &Reconciler{
+		BaseCluster: *reconciler.NewBaseCluster(
 			client,
 			clusterInfo,
-			&instance.Spec,
+			spec.ClusterOperationSpec,
+			spec,
 		),
-		ClusterConfig: instance.Spec.ClusterConfigSpec,
+		ClusterConfig: spec.ClusterConfigSpec,
 	}
-	return obj
+
+}
+
+func (r *Reconciler) GetImage() *util.Image {
+	image := &util.Image{
+		Repository:     hbasev1alpha1.DefaultRepository,
+		ProductName:    "hbase",
+		StackVersion:   "0.0.1",
+		ProductVersion: hbasev1alpha1.DefaultProductVersion,
+		PullPolicy:     corev1.PullIfNotPresent,
+	}
+	if r.Spec.Image != nil {
+		image.Repository = r.Spec.Image.Repository
+		image.ProductVersion = r.Spec.Image.ProductVersion
+		image.PullPolicy = r.Spec.Image.PullPolicy
+		image.PullSecretName = r.Spec.Image.PullSecretName
+	}
+
+	return image
+}
+
+func (r *Reconciler) RegisterResources(ctx context.Context) error {
+
+	master := master.NewReconciler(
+		r.GetClient(),
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			RoleName:    "master",
+		},
+		r.GetClusterOperation(),
+		r.ClusterConfig,
+		r.GetImage(),
+		r.Spec.MasterSpec,
+	)
+	if err := master.RegisterResources(ctx); err != nil {
+		return err
+	}
+	r.AddResource(master)
+
+	region := regionserver.NewReconciler(
+		r.GetClient(),
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			RoleName:    "regionserver",
+		},
+		r.GetClusterOperation(),
+		r.ClusterConfig,
+		r.GetImage(),
+		r.Spec.RegionServerSpec,
+	)
+	if err := region.RegisterResources(ctx); err != nil {
+		return err
+	}
+	r.AddResource(region)
+
+	rest := restserver.NewReconciler(
+		r.GetClient(),
+		reconciler.RoleInfo{
+			ClusterInfo: r.ClusterInfo,
+			RoleName:    "restserver",
+		},
+		r.GetClusterOperation(),
+		r.ClusterConfig,
+		r.GetImage(),
+		r.Spec.RestServerSpec,
+	)
+	if err := rest.RegisterResources(ctx); err != nil {
+		return err
+	}
+	r.AddResource(rest)
+
+	return nil
+
 }

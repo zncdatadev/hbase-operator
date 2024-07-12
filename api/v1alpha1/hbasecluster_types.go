@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apiv1alpha1 "github.com/zncdatadev/hbase-operator/pkg/apis/v1alpha1"
+	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,7 +33,7 @@ type HbaseClusterSpec struct {
 	ClusterConfigSpec *ClusterConfigSpec `json:"clusterConfig,omitempty"`
 
 	// +kubebuilder:validation:Required
-	ClusterOperationSpec *apiv1alpha1.ClusterOperationSpec `json:"clusterOperation,omitempty"`
+	ClusterOperationSpec *commonsv1alpha1.ClusterOperationSpec `json:"clusterOperation,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	MasterSpec *MasterSpec `json:"master,omitempty"`
@@ -48,13 +48,32 @@ type HbaseClusterSpec struct {
 type ClusterConfigSpec struct {
 
 	// +kubebuilder:validation:Required
-	ZookeeperConfigMap string `json:"zookeeperConfigMap,omitempty"`
+	ZookeeperConfigMapName string `json:"zookeeperConfigMapName,omitempty"`
 
 	// +kubebuilder:validation:Required
-	HdfsConfigMap string `json:"hdfsConfigMap,omitempty"`
+	HdfsConfigMapName string `json:"hdfsConfigMapName,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ListenerClass string `json:"listenerClass,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Authentication *AuthenticationSpec `json:"authentication,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	VectorAggregatorConfigMapName string `json:"vectorAggregatorConfigMapName,omitempty"`
+}
+
+type AuthenticationSpec struct {
+	// +kubebuilder:validation:Required
+	Kerberos *KerberosSpec `json:"kerberos"`
+
+	// +kubebuilder:validation:Required
+	TlsSecretClass string `json:"tlsSecretClass"`
+}
+
+type KerberosSpec struct {
+	// +kubebuilder:validation:Required
+	SecretClass string `json:"secretClass"`
 }
 
 // HbaseClusterStatus defines the observed state of HbaseCluster
