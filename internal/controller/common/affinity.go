@@ -49,8 +49,6 @@ func (n *NodeAffinity) Weight(weight int32) *NodeAffinity {
 type AffinityBuilder struct {
 	PodAffinity []PodAffinity
 	// NodePreferredAffinity []NodeAffinity
-
-	affinity *corev1.Affinity
 }
 
 func NewAffinityBuilder(

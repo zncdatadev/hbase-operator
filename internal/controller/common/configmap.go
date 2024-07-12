@@ -110,9 +110,16 @@ func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) *reconciler.Resu
 		return reconciler.NewResult(true, 0, err)
 	}
 	builder := r.GetBuilder()
-	builder.AddZnode(znode)
+	if err := builder.AddZnode(znode); err != nil {
+		return reconciler.NewResult(true, 0, err)
+	}
 
 	resource, err := builder.Build(ctx)
+
+	if err != nil {
+		return reconciler.NewResult(true, 0, err)
+	}
+
 	return r.ResourceReconcile(ctx, resource)
 }
 
