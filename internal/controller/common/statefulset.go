@@ -2,86 +2,53 @@ package common
 
 import (
 	"context"
-	"fmt"
-	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
-	"github.com/zncdatadev/hbase-operator/pkg/builder"
-	"github.com/zncdatadev/hbase-operator/pkg/client"
-	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
-	"github.com/zncdatadev/hbase-operator/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/builder"
+	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/reconciler"
+	"github.com/zncdatadev/operator-go/pkg/util"
 )
 
 var (
-	roleCommandArgMapping = map[string]string{
-		"master": "master",
-		"region": "region",
-		"rest":   "rest",
-	}
-	containerNameMapping = map[string]string{
-		"master": "master",
-		"region": "region",
-		"rest":   "rest",
+	roleNameToCommandArg = map[string]string{
+		"master":       "master",
+		"regionServer": "region",
+		"restServer":   "rest",
 	}
 )
 
 var _ builder.StatefulSetBuilder = &StatefulSetBuilder{}
 
 type StatefulSetBuilder struct {
-	builder.GenericStatefulSetBuilder
+	builder.StatefulSet
 	Ports         []corev1.ContainerPort
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
+	RoleGroupInfo *builder.RoleGroupInfo
 }
 
 func NewStatefulSetBuilder(
-	client client.ResourceClient,
-	roleGroupName string,
+	client *client.Client,
+	name string,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
+	roleGroupInfo *builder.RoleGroupInfo,
+	replicas *int32,
 	ports []corev1.ContainerPort,
-	image util.Image,
-	envOverrides map[string]string,
-	commandOverrides []string,
+	image *util.Image,
 ) *StatefulSetBuilder {
-	stsBuilder := builder.NewGenericStatefulSetBuilder(
-		client,
-		roleGroupName,
-		envOverrides,
-		commandOverrides,
-		image,
-	)
+
+	options := &builder.WorkloadOptions{}
+
 	return &StatefulSetBuilder{
-		GenericStatefulSetBuilder: *stsBuilder,
-		Ports:                     ports,
-		ClusterConfig:             clusterConfig,
+		StatefulSet:   *builder.NewStatefulSetBuilder(client, name, replicas, image, options),
+		Ports:         ports,
+		ClusterConfig: clusterConfig,
+		RoleGroupInfo: roleGroupInfo,
 	}
-}
 
-// Affinity , if affinity in spec defined, will be used, otherwise default affinity will be used
-func (b *StatefulSetBuilder) Affinity(specAffinity *corev1.Affinity, roleAffinity *corev1.Affinity) {
-	var affinity = specAffinity
-	if specAffinity == nil {
-		affinity = roleAffinity
-	}
-	b.GenericStatefulSetBuilder.AddAffinity(*affinity)
-}
-
-func (b *StatefulSetBuilder) getContainerName() string {
-	var name string
-	s := "["
-	for k, v := range containerNameMapping {
-		s += fmt.Sprintf(`"%s": "%s", `, k, v)
-		if strings.Contains(b.GetName(), k) {
-			name = v
-		}
-	}
-	s += "]"
-
-	if name == "" {
-		panic("Unknown name: " + b.GetName() + ", cannot determine container name. Supported: " + s)
-	}
-	return name
 }
 
 func (b *StatefulSetBuilder) getVolumeMounts() []corev1.VolumeMount {
@@ -109,7 +76,7 @@ func (b *StatefulSetBuilder) getVolumes() []corev1.Volume {
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					DefaultMode: &defaultMode,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: b.ClusterConfig.HdfsConfigMap,
+						Name: b.ClusterConfig.HdfsConfigMapName,
 					},
 				},
 			},
@@ -130,49 +97,112 @@ func (b *StatefulSetBuilder) getVolumes() []corev1.Volume {
 	return objs
 }
 
-func (b *StatefulSetBuilder) buildContainer() *corev1.Container {
-	containerBuilder := NewContainerBuilder(
-		b.getContainerName(),
-		b.Image.String(),
-		b.Image.PullPolicy,
+func (b *StatefulSetBuilder) GetMainContainerCommanArgs() []string {
+	hbaseSubArg := roleNameToCommandArg[b.RoleGroupInfo.RoleName]
+
+	// TODO: add vector logging and kerberos commands
+	return []string{
+		`
+mkdir -p /stackable/conf
+cp /stackable/tmp/hdfs/* /stackable/conf
+cp /stackable/tmp/hbase/* /stackable/conf
+
+
+prepare_signal_handlers()
+{
+	unset term_child_pid
+	unset term_kill_needed
+	trap 'handle_term_signal' TERM
+}
+
+handle_term_signal()
+{
+	if [ "${term_child_pid}" ]; then
+		kill -TERM "${term_child_pid}" 2>/dev/null
+	else
+		term_kill_needed="yes"
+	fi
+}
+
+wait_for_termination()
+{
+	set +e
+	term_child_pid=$1
+	if [[ -v term_kill_needed ]]; then
+		kill -TERM "${term_child_pid}" 2>/dev/null
+	fi
+	wait ${term_child_pid} 2>/dev/null
+	trap - TERM
+	wait ${term_child_pid} 2>/dev/null
+	set -e
+}
+
+prepare_signal_handlers
+bin/hbase ` + hbaseSubArg + ` start &
+wait_for_termination $!
+	`,
+	}
+}
+
+func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
+	objs := []corev1.EnvVar{
+		{
+			Name:  "HBASE_CONF_DIR",
+			Value: "/stackable/conf",
+		},
+		{
+			Name:  "HDFS_CONF_DIR",
+			Value: "/stackable/conf",
+		},
+	}
+	// TODO: add kerberos env vars
+	return objs
+}
+
+func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
+	containers := []corev1.Container{}
+	mainContainerBuilder := builder.NewContainer(b.RoleGroupInfo.RoleName, b.GetImage()).
+		SetCommand([]string{"/bin/bash", "-x", "-euo", "pipefail", "-c"}).
+		SetArgs(b.GetMainContainerCommanArgs()).
+		AddVolumeMounts(b.getVolumeMounts()).
+		AddEnvVars(b.getEnvVars())
+
+	// TODO: add vector container
+
+	containers = append(containers, *mainContainerBuilder.Build())
+
+	return containers
+}
+
+func (b *StatefulSetBuilder) GetDefaultAffinityBuilder() *AffinityBuilder {
+	affinityLabels := map[string]string{
+		util.AppKubernetesInstanceName: b.RoleGroupInfo.ClusterName,
+		util.AppKubernetesNameName:     "hbase",
+	}
+	antiAffinityLabels := map[string]string{
+		util.AppKubernetesInstanceName:  b.RoleGroupInfo.ClusterName,
+		util.AppKubernetesNameName:      "hbase",
+		util.AppKubernetesComponentName: b.RoleGroupInfo.RoleName,
+	}
+
+	affinity := NewAffinityBuilder(
+		*NewPodAffinity(affinityLabels, true, false).Weight(20),
+		*NewPodAffinity(antiAffinityLabels, true, true).Weight(70),
 	)
 
-	containerBuilder.AddVolumeMounts(b.getVolumeMounts())
-	containerBuilder.AddPorts(b.Ports)
-	containerBuilder.AutomaticSetProbe()
-	return containerBuilder.Build()
+	return affinity
 }
 
-func (b *StatefulSetBuilder) Build(ctx context.Context) (k8sclient.Object, error) {
-	b.AddContainers([]corev1.Container{*b.buildContainer()})
+func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
+	b.AddContainers(b.buildContainer())
 	b.AddVolumes(b.getVolumes())
-	return b.GetObject(), nil
+	b.AddAffinity(b.GetDefaultAffinityBuilder().Build())
+	return b.GetObject()
 }
 
-var _ reconciler.Reconciler = &StatefulSetReconciler[reconciler.AnySpec]{}
+var _ reconciler.Reconciler = &StatefulSetReconciler{}
 
-type StatefulSetReconciler[T reconciler.AnySpec] struct {
-	reconciler.StatefulSetReconciler[T]
+type StatefulSetReconciler struct {
+	reconciler.StatefulSet
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
-}
-
-func NewStatefulSetReconciler[T reconciler.AnySpec](
-	client client.ResourceClient,
-	roleGroupInfo reconciler.RoleGroupInfo,
-	clusterConfig *hbasev1alph1.ClusterConfigSpec,
-	ports []corev1.ContainerPort,
-	spec T,
-	stsBuilder builder.StatefulSetBuilder,
-) *StatefulSetReconciler[T] {
-
-	return &StatefulSetReconciler[T]{
-		StatefulSetReconciler: *reconciler.NewStatefulSetReconciler[T](
-			client,
-			roleGroupInfo,
-			ports,
-			spec,
-			stsBuilder,
-		),
-		ClusterConfig: clusterConfig,
-	}
 }

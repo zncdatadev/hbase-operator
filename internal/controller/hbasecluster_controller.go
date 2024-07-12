@@ -20,7 +20,8 @@ import (
 	"context"
 
 	"github.com/zncdatadev/hbase-operator/internal/controller/cluster"
-	"github.com/zncdatadev/hbase-operator/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,19 +59,22 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 	logger.V(1).Info("HbaseCluster found", "namespace", instance.Namespace, "name", instance.Name)
 
-	resourceClient := client.ResourceClient{
+	// Labels: map[string]string{
+	// 	"app.kubernetes.io/name":       "hbase",
+	// 	"app.kubernetes.io/managed-by": "hbase.zncdata.dev",
+	// 	"app.kubernetes.io/instance":   instance.Name,
+	// },
+	resourceClient := &client.Client{
 		Client:         r.Client,
 		OwnerReference: instance,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":       "hbase",
-			"app.kubernetes.io/managed-by": "hbase.zncdata.dev",
-			"app.kubernetes.io/instance":   instance.Name,
-		},
 	}
 
 	clusterReconciler := cluster.NewClusterReconciler(
 		resourceClient,
-		instance,
+		reconciler.ClusterInfo{
+			ClusterName: instance.Name,
+		},
+		&instance.Spec,
 	)
 
 	if err := clusterReconciler.RegisterResources(ctx); err != nil {
@@ -78,13 +82,13 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if result := clusterReconciler.Reconcile(ctx); result.RequeueOrNot() {
-		return result.Result()
+		return result.CtrlResult()
 	}
 
 	logger.Info("Cluster reconciled")
 
 	if result := clusterReconciler.Ready(ctx); result.RequeueOrNot() {
-		return result.Result()
+		return result.CtrlResult()
 	}
 
 	logger.V(1).Info("Reconcile finished")

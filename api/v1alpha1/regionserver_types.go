@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	apiv1alpha1 "github.com/zncdatadev/hbase-operator/pkg/apis/v1alpha1"
+	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -12,7 +12,7 @@ type RegionServerSpec struct {
 	// +kubebuilder:validation:Required
 	RoleGroups map[string]RegionServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
-	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`
@@ -35,17 +35,17 @@ type RegionConfigSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// Use time.ParseDuration to parse the string
 	// +kubebuilder:validation:Optional
 	GracefulShutdownTimeout *string `json:"gracefulShutdownTimeout,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Logging *apiv1alpha1.ContainerLoggingSpec `json:"logging,omitempty"`
+	Logging *commonsv1alpha1.LoggingConfigSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Resources *apiv1alpha1.ResourcesSpec `json:"resources,omitempty"`
+	Resources *commonsv1alpha1.ResourcesSpec `json:"resources,omitempty"`
 }
 
 type RegionConfigOverrideSpec struct{}
@@ -59,7 +59,7 @@ type RegionServerRoleGroupSpec struct {
 	Config *RegionConfigSpec `json:"config,omitempty"`
 
 	// +kubebuilder:validation:Required
-	PodDisruptionBudget *apiv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CommandOverrides []string `json:"commandOverrides,omitempty"`

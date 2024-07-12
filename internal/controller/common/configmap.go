@@ -3,13 +3,16 @@ package common
 import (
 	"context"
 
-	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
-	"github.com/zncdatadev/hbase-operator/pkg/builder"
-	"github.com/zncdatadev/hbase-operator/pkg/client"
-	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
-	"github.com/zncdatadev/hbase-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/zncdatadev/operator-go/pkg/builder"
+	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/reconciler"
+	util "github.com/zncdatadev/operator-go/pkg/util"
+
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 )
 
 const (
@@ -21,102 +24,123 @@ var _ builder.ConfigBuilder = &ConfigMapBuilder{}
 
 type ConfigMapBuilder struct {
 	builder.ConfigMapBuilder
-	ZnodeConfig *util.ZnodeConfiguration
+
+	hbaseConfig *util.XMLConfiguration
 }
 
 func NewConfigMapBuilder(
-	client client.ResourceClient,
+	client *client.Client,
 	name string,
-	ZnodeConfig *util.ZnodeConfiguration,
+	options builder.ResourceOptions,
 ) *ConfigMapBuilder {
 	return &ConfigMapBuilder{
 		ConfigMapBuilder: *builder.NewConfigMapBuilder(
 			client,
 			name,
+			options.Labels,
+			options.Annotations,
 		),
-		ZnodeConfig: ZnodeConfig,
 	}
 }
 
 func (b *ConfigMapBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
-	hbaseConfig, err := b.getHbaseConfig(b.ZnodeConfig)
+	hbaseConfig, err := b.hbaseConfig.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	b.AddData(HbaseKey, hbaseConfig)
+	b.AddData(map[string]string{hbaseConfig: hbaseConfig})
 
 	return b.ConfigMapBuilder.Build(ctx)
 }
 
-func (r *ConfigMapBuilder) getHbaseConfig(znode *util.ZnodeConfiguration) (string, error) {
-
-	configuration := util.XMLConfiguration{}
+func (r *ConfigMapBuilder) AddZnode(znode *ZnodeConfiguration) error {
 
 	quorum, err := znode.GetQuorum()
 	if err != nil {
-		return "", err
+		return err
 	}
-	configuration.AddPropertyWithKV("hbase.zookeeper.quorum", quorum, "")
+	r.hbaseConfig.AddPropertyWithString("hbase.zookeeper.quorum", quorum, "")
 
 	chroot, err := znode.GetChroot()
 	if err != nil {
-		return "", err
+		return err
 	}
-	configuration.AddPropertyWithKV("zookeeper.znode.parent", chroot+"/hbase", "")
+	r.hbaseConfig.AddPropertyWithString("zookeeper.znode.parent", chroot+"/hbase", "")
 
 	clientPort, err := znode.GetClientPort()
 	if err != nil {
-		return "", err
+		return err
 	}
-	configuration.AddPropertyWithKV("hbase.zookeeper.property.clientPort", clientPort, "")
+	r.hbaseConfig.AddPropertyWithString("hbase.zookeeper.property.clientPort", clientPort, "")
 
-	configuration.AddPropertyWithKV("hbase.cluster.distributed", "true", "")
-	configuration.AddPropertyWithKV("hbase.rootdir", "/hbase", "")
-	configuration.AddPropertyWithKV("hbase.unsafe.regionserver.hostname.disable.master.reversedns", "true", "")
+	r.hbaseConfig.AddPropertyWithString("hbase.cluster.distributed", "true", "")
+	r.hbaseConfig.AddPropertyWithString("hbase.rootdir", "/hbase", "")
+	r.hbaseConfig.AddPropertyWithString("hbase.unsafe.regionserver.hostname.disable.master.reversedns", "true", "")
 
-	data, err := configuration.Marshal()
-	if err != nil {
-		return "", err
-	}
-
-	return data, nil
+	return nil
 }
 
-var _ reconciler.ResourceReconciler[builder.ConfigBuilder] = &ConfigMapReconciler[reconciler.AnySpec]{}
+var _ reconciler.ResourceReconciler[*ConfigMapBuilder] = &ConfigMapReconciler[reconciler.AnySpec]{}
 
 type ConfigMapReconciler[T reconciler.AnySpec] struct {
-	reconciler.BaseResourceReconciler[T, builder.ConfigBuilder]
+	reconciler.ResourceReconciler[*ConfigMapBuilder]
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 }
 
-func (r *ConfigMapReconciler[T]) GetZKZnodeConfig(ctx context.Context) (*util.ZnodeConfiguration, error) {
-	obj := &corev1.ConfigMap{}
-	name := r.ClusterConfig.ZookeeperConfigMap
-	namespace := r.Client.GetOwnerNamespace()
-	if err := r.Client.Get(ctx, ctrlclient.ObjectKey{Name: name, Namespace: namespace}, obj); err != nil {
+func (r *ConfigMapReconciler[T]) GetZKZnodeConfig(ctx context.Context) (*ZnodeConfiguration, error) {
+	name := r.ClusterConfig.ZookeeperConfigMapName
+	namespace := r.GetClient().GetOwnerNamespace()
+	obj := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	if err := r.GetClient().Get(ctx, obj); err != nil {
 		return nil, err
 	}
 
-	return &util.ZnodeConfiguration{ConfigMap: obj}, nil
+	return &ZnodeConfiguration{ConfigMap: obj}, nil
+}
+
+func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) *reconciler.Result {
+	znode, err := r.GetZKZnodeConfig(ctx)
+	if err != nil {
+		return reconciler.NewResult(true, 0, err)
+	}
+	builder := r.GetBuilder()
+	builder.AddZnode(znode)
+
+	resource, err := builder.Build(ctx)
+	return r.ResourceReconcile(ctx, resource)
 }
 
 func NewConfigMapReconciler[T reconciler.AnySpec](
-	client client.ResourceClient,
-	roleGroupName string,
+	client *client.Client,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
+	options reconciler.RoleGroupInfo,
 	spec T,
 ) *ConfigMapReconciler[T] {
 
-	cmBuilder := builder.NewConfigMapBuilder(
+	cmBuilder := NewConfigMapBuilder(
 		client,
-		roleGroupName,
+		options.GetFullName(),
+		builder.ResourceOptions{
+			Labels:      options.GetLabels(),
+			Annotations: options.GetAnnotations(),
+			RoleGroupInfo: &builder.RoleGroupInfo{
+				ClusterName:   options.ClusterName,
+				RoleName:      options.RoleName,
+				RoleGroupName: options.RoleGroupName,
+			},
+		},
 	)
 
 	return &ConfigMapReconciler[T]{
-		BaseResourceReconciler: *reconciler.NewBaseResourceReconciler[T, builder.ConfigBuilder](
+		ResourceReconciler: reconciler.NewGenericResourceReconciler[*ConfigMapBuilder](
 			client,
-			roleGroupName,
-			spec,
+			options.GetFullName(),
 			cmBuilder,
 		),
 		ClusterConfig: clusterConfig,

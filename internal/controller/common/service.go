@@ -1,38 +1,31 @@
 package common
 
 import (
-	"github.com/zncdatadev/hbase-operator/pkg/builder"
-	"github.com/zncdatadev/hbase-operator/pkg/client"
-	"github.com/zncdatadev/hbase-operator/pkg/reconciler"
+	"github.com/zncdatadev/operator-go/pkg/builder"
+	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ reconciler.ResourceReconciler[builder.ServiceBuilder] = &ServiceReconciler[reconciler.AnySpec]{}
+var _ reconciler.ResourceReconciler[builder.ServiceBuilder] = &ServiceReconciler{}
 
-type ServiceReconciler[T reconciler.AnySpec] struct {
-	reconciler.BaseResourceReconciler[T, builder.ServiceBuilder]
-	Ports []corev1.ContainerPort
+type ServiceReconciler struct {
+	reconciler.Service
 }
 
-func NewServiceReconciler[T reconciler.AnySpec](
-	client client.ResourceClient,
-	roleGroupName string,
+func NewServiceReconciler(
+	client *client.Client,
 	ports []corev1.ContainerPort,
-	spec T,
-) *ServiceReconciler[T] {
+	options reconciler.RoleGroupInfo,
+) *ServiceReconciler {
 
-	svcBuilder := builder.NewServiceBuilder(
-		client,
-		roleGroupName,
-		ports,
-	)
-	return &ServiceReconciler[T]{
-		BaseResourceReconciler: *reconciler.NewBaseResourceReconciler[T, builder.ServiceBuilder](
+	return &ServiceReconciler{
+		Service: *reconciler.NewServiceReconciler(
 			client,
-			roleGroupName,
-			spec,
-			svcBuilder,
+			options.GetFullName(),
+			options.GetLabels(),
+			options.GetAnnotations(),
+			ports,
 		),
-		Ports: ports,
 	}
 }
