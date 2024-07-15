@@ -22,7 +22,11 @@ func NewStatefulSetReconciler(
 		client,
 		roleGroupInfo.GetFullName(),
 		clusterConfig,
-		&builder.RoleGroupInfo{},
+		builder.RoleGroupInfo{
+			ClusterName:   roleGroupInfo.GetClusterName(),
+			RoleName:      roleGroupInfo.GetRoleName(),
+			RoleGroupName: roleGroupInfo.GetGroupName(),
+		},
 		spec.Replicas,
 		ports,
 		image,
@@ -48,35 +52,3 @@ func NewStatefulSetReconciler(
 		stsBuilder,
 	)
 }
-
-// func addAffinityToStatefulSetBuilder(statefulSetBuilder *common.StatefulSetBuilder, specAffinity *corev1.Affinity,
-// 	instanceName string, hdfsInstanceName string) {
-// 	affinityLabels := metav1.LabelSelector{
-// 		MatchLabels: map[string]string{
-// 			reconciler.LabelInstance: instanceName,
-// 			reconciler.LabelServer:   "hbase",
-// 		},
-// 	}
-// 	// affinity with hdfs's datanode
-// 	hdfsDatanodeLabels := metav1.LabelSelector{
-// 		MatchLabels: map[string]string{
-// 			reconciler.LabelInstance:  hdfsInstanceName,
-// 			reconciler.LabelServer:    "hdfs",
-// 			reconciler.LabelComponent: "datanode",
-// 		},
-// 	}
-// 	antiAffinityLabels := metav1.LabelSelector{
-// 		MatchLabels: map[string]string{
-// 			reconciler.LabelInstance:  instanceName,
-// 			reconciler.LabelServer:    "hbase",
-// 			reconciler.LabelComponent: roleName(),
-// 		},
-// 	}
-// 	defaultAffinityBuilder := builder.AffinityBuilder{PodAffinity: []*builder.PodAffinity{
-// 		builder.NewPodAffinity(builder.StrengthPrefer, false, affinityLabels).Weight(20),
-// 		builder.NewPodAffinity(builder.StrengthPrefer, false, hdfsDatanodeLabels).Weight(50),
-// 		builder.NewPodAffinity(builder.StrengthPrefer, true, antiAffinityLabels).Weight(70),
-// 	}}
-
-// 	statefulSetBuilder.Affinity(specAffinity, defaultAffinityBuilder.Build())
-// }

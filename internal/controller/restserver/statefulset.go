@@ -22,7 +22,11 @@ func NewStatefulSetReconciler(
 		client,
 		roleGroupInfo.GetFullName(),
 		clusterConfig,
-		&builder.RoleGroupInfo{},
+		builder.RoleGroupInfo{
+			ClusterName:   roleGroupInfo.GetClusterName(),
+			RoleName:      roleGroupInfo.GetRoleName(),
+			RoleGroupName: roleGroupInfo.GetGroupName(),
+		},
 		spec.Replicas,
 		ports,
 		image,

@@ -40,6 +40,7 @@ func NewConfigMapBuilder(
 			options.Labels,
 			options.Annotations,
 		),
+		hbaseConfig: util.NewXMLConfiguration(),
 	}
 }
 
@@ -48,7 +49,7 @@ func (b *ConfigMapBuilder) Build(ctx context.Context) (ctrlclient.Object, error)
 	if err != nil {
 		return nil, err
 	}
-	b.AddData(map[string]string{hbaseConfig: hbaseConfig})
+	b.AddData(map[string]string{HbaseKey: hbaseConfig})
 
 	return b.ConfigMapBuilder.Build(ctx)
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/zncdatadev/hbase-operator/internal/controller/cluster"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,9 +70,16 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		OwnerReference: instance,
 	}
 
+	gvk := instance.GetObjectKind().GroupVersionKind()
+
 	clusterReconciler := cluster.NewClusterReconciler(
 		resourceClient,
 		reconciler.ClusterInfo{
+			GVK: &metav1.GroupVersionKind{
+				Group:   gvk.Group,
+				Version: gvk.Version,
+				Kind:    gvk.Kind,
+			},
 			ClusterName: instance.Name,
 		},
 		&instance.Spec,
