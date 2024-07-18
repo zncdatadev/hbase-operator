@@ -150,7 +150,7 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 			Value: "/stackable/conf",
 		},
 		{
-			Name:  "HDFS_CONF_DIR",
+			Name:  "HADOOP_CONF_DIR",
 			Value: "/stackable/conf",
 		},
 	}

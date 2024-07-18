@@ -20,6 +20,7 @@ spec:
       default:
         replicas: 2
         config:
+          listenerClass: external-unstable
           resources:
             cpu:
               min: 200m
@@ -44,6 +45,7 @@ spec:
       default:
         replicas: 1
         config:
+          listenerClass: external-stable
           resources:
             cpu:
               min: 100m
