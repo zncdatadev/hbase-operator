@@ -10,13 +10,13 @@ var (
 			Protocol:      corev1.ProtocolTCP,
 		},
 		{
-			Name:          "http",
+			Name:          "ui-http",
 			ContainerPort: 16010,
 			Protocol:      corev1.ProtocolTCP,
 		},
 		{
-			Name:          "9003",
-			ContainerPort: 16030,
+			Name:          "metrics",
+			ContainerPort: 9100,
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}

@@ -47,6 +47,7 @@ func (r *Reconciler) GetImage() *util.Image {
 		PullPolicy:     corev1.PullIfNotPresent,
 	}
 	if r.Spec.Image != nil {
+		image.Custom = r.Spec.Image.Custom
 		image.Repository = r.Spec.Image.Repository
 		image.ProductVersion = r.Spec.Image.ProductVersion
 		image.PullPolicy = r.Spec.Image.PullPolicy

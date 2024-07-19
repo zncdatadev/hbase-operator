@@ -16,8 +16,8 @@ import (
 var (
 	roleNameToCommandArg = map[string]string{
 		"master":       "master",
-		"regionServer": "region",
-		"restServer":   "rest",
+		"regionserver": "regionserver",
+		"restserver":   "rest",
 	}
 )
 
@@ -27,14 +27,14 @@ type StatefulSetBuilder struct {
 	builder.StatefulSet
 	Ports         []corev1.ContainerPort
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
-	RoleGroupInfo *builder.RoleGroupInfo
+	RoleGroupInfo builder.RoleGroupInfo
 }
 
 func NewStatefulSetBuilder(
 	client *client.Client,
 	name string,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
-	roleGroupInfo *builder.RoleGroupInfo,
+	roleGroupInfo builder.RoleGroupInfo,
 	replicas *int32,
 	ports []corev1.ContainerPort,
 	image *util.Image,
@@ -101,9 +101,7 @@ func (b *StatefulSetBuilder) GetMainContainerCommanArgs() []string {
 	hbaseSubArg := roleNameToCommandArg[b.RoleGroupInfo.RoleName]
 
 	// TODO: add vector logging and kerberos commands
-	return []string{
-		`
-mkdir -p /stackable/conf
+	arg := `mkdir -p /stackable/conf
 cp /stackable/tmp/hdfs/* /stackable/conf
 cp /stackable/tmp/hbase/* /stackable/conf
 
@@ -140,8 +138,9 @@ wait_for_termination()
 prepare_signal_handlers
 bin/hbase ` + hbaseSubArg + ` start &
 wait_for_termination $!
-	`,
-	}
+`
+	intendedString := util.IndentTab4Spaces(arg)
+	return []string{intendedString}
 }
 
 func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
@@ -151,7 +150,7 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 			Value: "/stackable/conf",
 		},
 		{
-			Name:  "HDFS_CONF_DIR",
+			Name:  "HADOOP_CONF_DIR",
 			Value: "/stackable/conf",
 		},
 	}
@@ -161,11 +160,13 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 
 func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
 	containers := []corev1.Container{}
-	mainContainerBuilder := builder.NewContainer(b.RoleGroupInfo.RoleName, b.GetImage()).
+	image := b.GetImage()
+	mainContainerBuilder := builder.NewContainer(b.RoleGroupInfo.RoleName, image).
 		SetCommand([]string{"/bin/bash", "-x", "-euo", "pipefail", "-c"}).
 		SetArgs(b.GetMainContainerCommanArgs()).
 		AddVolumeMounts(b.getVolumeMounts()).
-		AddEnvVars(b.getEnvVars())
+		AddEnvVars(b.getEnvVars()).
+		AddPorts(b.Ports)
 
 	// TODO: add vector container
 
@@ -186,8 +187,8 @@ func (b *StatefulSetBuilder) GetDefaultAffinityBuilder() *AffinityBuilder {
 	}
 
 	affinity := NewAffinityBuilder(
-		*NewPodAffinity(affinityLabels, true, false).Weight(20),
-		*NewPodAffinity(antiAffinityLabels, true, true).Weight(70),
+		*NewPodAffinity(affinityLabels, false, false).Weight(20),
+		*NewPodAffinity(antiAffinityLabels, false, true).Weight(70),
 	)
 
 	return affinity

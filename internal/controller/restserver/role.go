@@ -40,14 +40,14 @@ func NewReconciler(
 			clusterOperation,
 			spec,
 		),
-
+		Image: 	   image,
 		ClusterConfig: clusterConfig,
 	}
 }
 
 func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	for name, roleGroup := range r.Spec.RoleGroups {
-		mergedRoleGroup := r.MergeRoleGroupSpec(roleGroup)
+		mergedRoleGroup := r.MergeRoleGroupSpec(&roleGroup)
 
 		info := reconciler.RoleGroupInfo{
 			RoleInfo:      r.RoleInfo,
