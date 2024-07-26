@@ -73,7 +73,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 
 	var reconcilers []reconciler.Reconciler
 
-	statefulSetReconciler := NewStatefulSetReconciler(
+	statefulSetReconciler, err := NewStatefulSetReconciler(
 		r.Client,
 		r.ClusterConfig,
 		info,
@@ -81,6 +81,10 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 		r.Image,
 		roleGroupSpec.(*hbasev1alph1.MasterRoleGroupSpec),
 	)
+
+	if err != nil {
+		return nil, err
+	}
 
 	reconcilers = append(reconcilers, statefulSetReconciler)
 

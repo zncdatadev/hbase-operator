@@ -38,9 +38,8 @@ func NewStatefulSetBuilder(
 	replicas *int32,
 	ports []corev1.ContainerPort,
 	image *util.Image,
+	options *builder.WorkloadOptions,
 ) *StatefulSetBuilder {
-
-	options := &builder.WorkloadOptions{}
 
 	return &StatefulSetBuilder{
 		StatefulSet:   *builder.NewStatefulSetBuilder(client, name, replicas, image, options),

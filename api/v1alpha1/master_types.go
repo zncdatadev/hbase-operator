@@ -72,6 +72,6 @@ type MasterRoleGroupSpec struct {
 	// +kubebuilder:validation:Optional
 	EnvOverrides map[string]string `json:"envOverrides,omitempty"`
 
-	// // +kubebuilder:validation:Optional
-	// PodOverride *corev1.PodTemplateSpec `json:"podOverride,omitempty"`
+	// +kubebuilder:validation:Optional
+	PodOverrides *corev1.PodTemplateSpec `json:"podOverrides,omitempty"`
 }

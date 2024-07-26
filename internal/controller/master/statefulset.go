@@ -1,6 +1,8 @@
 package master
 
 import (
+	"time"
+
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/hbase-operator/internal/controller/common"
 	"github.com/zncdatadev/operator-go/pkg/builder"
@@ -17,7 +19,33 @@ func NewStatefulSetReconciler(
 	ports []corev1.ContainerPort,
 	image *util.Image,
 	spec *hbasev1alph1.MasterRoleGroupSpec,
-) reconciler.ResourceReconciler[builder.StatefulSetBuilder] {
+) (reconciler.ResourceReconciler[builder.StatefulSetBuilder], error) {
+
+	options := &builder.WorkloadOptions{
+		Labels:           roleGroupInfo.GetLabels(),
+		Annotations:      roleGroupInfo.GetAnnotations(),
+		PodOverrides:     spec.PodOverrides,
+		CommandOverrides: spec.CommandOverrides,
+		EnvOverrides:     spec.EnvOverrides,
+	}
+
+	if spec.Config != nil {
+
+		var gracefulShutdownTimeout time.Duration
+		var err error
+
+		if spec.Config.GracefulShutdownTimeout != nil {
+			gracefulShutdownTimeout, err = time.ParseDuration(*spec.Config.GracefulShutdownTimeout)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		options.TerminationGracePeriod = &gracefulShutdownTimeout
+		options.Resource = spec.Config.Resources
+		options.Affinity = spec.Config.Affinity
+	}
+
 	stsBuilder := common.NewStatefulSetBuilder(
 		client,
 		roleGroupInfo.GetFullName(),
@@ -30,11 +58,12 @@ func NewStatefulSetReconciler(
 		spec.Replicas,
 		ports,
 		image,
+		options,
 	)
 
 	return reconciler.NewStatefulSet(
 		client,
 		roleGroupInfo.GetFullName(),
 		stsBuilder,
-	)
+	), nil
 }
