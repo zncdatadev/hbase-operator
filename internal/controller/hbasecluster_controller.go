@@ -44,6 +44,10 @@ type HbaseClusterReconciler struct {
 // +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
