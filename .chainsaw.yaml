@@ -5,11 +5,12 @@ metadata:
 spec:
   namespace: kubedatastack
   timeouts:
-    apply: 420s
-    assert: 420s
+    apply: 3000s
+    assert: 3000s
     cleanup: 120s
     delete: 120s
-    error: 300s
+    error: 240s
     exec: 200s
   skipDelete: false
   failFast: true
+  forceTerminationGracePeriod: 10s

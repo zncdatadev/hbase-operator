@@ -14,7 +14,7 @@ spec:
     repository: quay.io/zncdatadev/hadoop
     tag: 3.3.4
   clusterConfig:
-    zookeeperDiscoveryZNode: sample-hdfs-znode
+    zookeeperConfigMapName: sample-hdfs-znode
   nameNode:
     roleGroups:
       default:
@@ -24,7 +24,7 @@ spec:
           resources:
             cpu:
               min: 200m
-              max: 800m
+              max: 500m
             memory:
               limit: "500Mi"
           logging:
