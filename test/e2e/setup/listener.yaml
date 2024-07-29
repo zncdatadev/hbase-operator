@@ -3,12 +3,11 @@ kind: ListenerCSI
 metadata:
   labels:
     app.kubernetes.io/name: listenercsi
-    app.kubernetes.io/instance: listenercsi-sample
+    app.kubernetes.io/instance: listenercsi
     app.kubernetes.io/part-of: listener-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: listener-operator
-  name: listenercsi-sample
-  namespace: kubedatastack
+  name: listenercsi
 spec:
   csiDriver:
     repository: quay.io/zncdatadev/listener-csi-driver
@@ -34,4 +33,3 @@ spec:
     pullPolicy: IfNotPresent
     logging:
       level: "10"
-

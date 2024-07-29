@@ -1,20 +1,35 @@
+---
+apiVersion: zookeeper.zncdata.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  labels:
+    app.kubernetes.io/name: zookeeperznode
+    app.kubernetes.io/instance: simple-hdfs-znode
+    app.kubernetes.io/part-of: zookeeper-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: zookeeper-operator
+  name: simple-hdfs-znode
+spec:
+  clusterRef:
+    name: simple-zookeeper
+    namespace: ($namespace)
+---
 apiVersion: hdfs.zncdata.dev/v1alpha1
 kind: HdfsCluster
 metadata:
   labels:
     app.kubernetes.io/name: hdfscluster
-    app.kubernetes.io/instance: hdfscluster-sample
+    app.kubernetes.io/instance: simple-hdfs
     app.kubernetes.io/part-of: hdfs-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: hdfs-operator
-  name: hdfscluster-sample
-  namespace: kubedatastack
+  name: simple-hdfs
 spec:
   image:
     repository: quay.io/zncdatadev/hadoop
     tag: 3.3.4
   clusterConfig:
-    zookeeperConfigMapName: sample-hdfs-znode
+    zookeeperConfigMapName: simple-hdfs-znode
   nameNode:
     roleGroups:
       default:
