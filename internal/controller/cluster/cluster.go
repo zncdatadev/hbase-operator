@@ -44,7 +44,7 @@ func (r *Reconciler) GetImage() *util.Image {
 		ProductName:    "hbase",
 		StackVersion:   "0.0.1",
 		ProductVersion: hbasev1alpha1.DefaultProductVersion,
-		PullPolicy:     corev1.PullIfNotPresent,
+		PullPolicy:     &[]corev1.PullPolicy{corev1.PullIfNotPresent}[0],
 	}
 	if r.Spec.Image != nil {
 		image.Custom = r.Spec.Image.Custom
