@@ -1,0 +1,42 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: default
+spec:
+  steps:
+  - try:
+    - apply:
+        file: ../setup/olm.yaml
+    - assert:
+        file: ../setup/olm-assert.yaml
+  - try:
+    - apply:
+        file: ../setup/subs.yaml
+    - assert:
+        file: ../setup/subs-assert.yaml
+    - apply:
+        file: ../setup/listener.yaml
+    - assert:
+        file: ../setup/listener-assert.yaml
+  - try:
+    - apply:
+        file: ../setup/zookeeper.yaml
+    - assert:
+        file: ../setup/zookeeper-assert.yaml
+  - try:
+    - apply:
+        file: ../setup/hdfs.yaml
+    - assert:
+        file: ../setup/hdfs-assert.yaml
+    cleanup:
+    - wait:
+        apiVersion: v1
+        kind: Pod
+        name: simple-hdfs-default-namenode-0
+        for:
+          deletion: {}
+  - try:
+    - apply:
+        file: hbase.yaml
+    - assert:
+        file: hbase-assert.yaml

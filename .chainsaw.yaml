@@ -3,10 +3,9 @@ kind: Configuration
 metadata:
   name: custom-config
 spec:
-  namespace: kubedatastack
   timeouts:
-    apply: 3000s
-    assert: 3000s
+    apply: 300s
+    assert: 300s
     cleanup: 120s
     delete: 120s
     error: 240s
@@ -14,3 +13,4 @@ spec:
   skipDelete: false
   failFast: true
   forceTerminationGracePeriod: 10s
+  parallel: 1

@@ -1,0 +1,35 @@
+
+---
+apiVersion: zookeeper.zncdata.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  name: simple-hdfs-znode
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-hdfs-znode
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: simple-hdfs-default-journalnode
+status:
+  availableReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: simple-hdfs-default-namenode
+status:
+  availableReplicas: 2
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: simple-hdfs-default-datanode
+status:
+  availableReplicas: 2
+  replicas: 2
