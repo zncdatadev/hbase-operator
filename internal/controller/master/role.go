@@ -73,12 +73,19 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 
 	var reconcilers []reconciler.Reconciler
 
+	stopped := false
+
+	if r.ClusterOperation != nil && r.ClusterOperation.Stopped {
+		stopped = true
+	}
+
 	statefulSetReconciler, err := NewStatefulSetReconciler(
 		r.Client,
 		r.ClusterConfig,
 		info,
 		Ports,
 		r.Image,
+		stopped,
 		roleGroupSpec.(*hbasev1alph1.MasterRoleGroupSpec),
 	)
 

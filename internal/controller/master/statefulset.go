@@ -18,12 +18,18 @@ func NewStatefulSetReconciler(
 	roleGroupInfo reconciler.RoleGroupInfo,
 	ports []corev1.ContainerPort,
 	image *util.Image,
+	stopped bool,
 	spec *hbasev1alph1.MasterRoleGroupSpec,
 ) (reconciler.ResourceReconciler[builder.StatefulSetBuilder], error) {
 
-	options := &builder.WorkloadOptions{
-		Labels:           roleGroupInfo.GetLabels(),
-		Annotations:      roleGroupInfo.GetAnnotations(),
+	options := builder.WorkloadOptions{
+		Options: builder.Options{
+			ClusterName:   roleGroupInfo.GetClusterName(),
+			RoleName:      roleGroupInfo.GetRoleName(),
+			RoleGroupName: roleGroupInfo.GetGroupName(),
+			Labels:        roleGroupInfo.GetLabels(),
+			Annotations:   roleGroupInfo.GetAnnotations(),
+		},
 		PodOverrides:     spec.PodOverrides,
 		CommandOverrides: spec.CommandOverrides,
 		EnvOverrides:     spec.EnvOverrides,
@@ -50,11 +56,6 @@ func NewStatefulSetReconciler(
 		client,
 		roleGroupInfo.GetFullName(),
 		clusterConfig,
-		builder.RoleGroupInfo{
-			ClusterName:   roleGroupInfo.GetClusterName(),
-			RoleName:      roleGroupInfo.GetRoleName(),
-			RoleGroupName: roleGroupInfo.GetGroupName(),
-		},
 		spec.Replicas,
 		ports,
 		image,
@@ -65,5 +66,6 @@ func NewStatefulSetReconciler(
 		client,
 		roleGroupInfo.GetFullName(),
 		stsBuilder,
+		stopped,
 	), nil
 }

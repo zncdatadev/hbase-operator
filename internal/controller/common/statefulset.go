@@ -27,25 +27,25 @@ type StatefulSetBuilder struct {
 	builder.StatefulSet
 	Ports         []corev1.ContainerPort
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
-	RoleGroupInfo builder.RoleGroupInfo
+	RoleName      string
+	ClusterName   string
 }
 
 func NewStatefulSetBuilder(
 	client *client.Client,
 	name string,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
-	roleGroupInfo builder.RoleGroupInfo,
 	replicas *int32,
 	ports []corev1.ContainerPort,
 	image *util.Image,
-	options *builder.WorkloadOptions,
+	options builder.WorkloadOptions,
 ) *StatefulSetBuilder {
 
 	return &StatefulSetBuilder{
 		StatefulSet:   *builder.NewStatefulSetBuilder(client, name, replicas, image, options),
 		Ports:         ports,
 		ClusterConfig: clusterConfig,
-		RoleGroupInfo: roleGroupInfo,
+		RoleName:      options.RoleName,
 	}
 
 }
@@ -97,7 +97,7 @@ func (b *StatefulSetBuilder) getVolumes() []corev1.Volume {
 }
 
 func (b *StatefulSetBuilder) GetMainContainerCommanArgs() []string {
-	hbaseSubArg := roleNameToCommandArg[b.RoleGroupInfo.RoleName]
+	hbaseSubArg := roleNameToCommandArg[b.RoleName]
 
 	// TODO: add vector logging and kerberos commands
 	arg := `mkdir -p /stackable/conf
@@ -159,8 +159,8 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 
 func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
 	containers := []corev1.Container{}
-	image := b.GetImage()
-	mainContainerBuilder := builder.NewContainer(b.RoleGroupInfo.RoleName, image).
+	image := b.GetImageWithTag()
+	mainContainerBuilder := builder.NewContainer(b.RoleName, image).
 		SetCommand([]string{"/bin/bash", "-x", "-euo", "pipefail", "-c"}).
 		SetArgs(b.GetMainContainerCommanArgs()).
 		AddVolumeMounts(b.getVolumeMounts()).
@@ -176,13 +176,13 @@ func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
 
 func (b *StatefulSetBuilder) GetDefaultAffinityBuilder() *AffinityBuilder {
 	affinityLabels := map[string]string{
-		util.AppKubernetesInstanceName: b.RoleGroupInfo.ClusterName,
+		util.AppKubernetesInstanceName: b.ClusterName,
 		util.AppKubernetesNameName:     "hbase",
 	}
 	antiAffinityLabels := map[string]string{
-		util.AppKubernetesInstanceName:  b.RoleGroupInfo.ClusterName,
+		util.AppKubernetesInstanceName:  b.ClusterName,
 		util.AppKubernetesNameName:      "hbase",
-		util.AppKubernetesComponentName: b.RoleGroupInfo.RoleName,
+		util.AppKubernetesComponentName: b.RoleName,
 	}
 
 	affinity := NewAffinityBuilder(
@@ -196,7 +196,7 @@ func (b *StatefulSetBuilder) GetDefaultAffinityBuilder() *AffinityBuilder {
 func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
 	b.AddContainers(b.buildContainer())
 	b.AddVolumes(b.getVolumes())
-	b.AddAffinity(b.GetDefaultAffinityBuilder().Build())
+	b.SetAffinity(b.GetDefaultAffinityBuilder().Build())
 	return b.GetObject()
 }
 

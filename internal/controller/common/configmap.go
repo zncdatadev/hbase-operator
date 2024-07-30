@@ -23,12 +23,16 @@ var _ builder.ConfigBuilder = &ConfigMapBuilder{}
 
 type ConfigMapBuilder struct {
 	builder.ConfigMapBuilder
+
+	ClusterName   string
+	RoleName      string
+	RolegroupName string
 }
 
 func NewConfigMapBuilder(
 	client *client.Client,
 	name string,
-	options builder.ResourceOptions,
+	options builder.Options,
 ) *ConfigMapBuilder {
 	return &ConfigMapBuilder{
 		ConfigMapBuilder: *builder.NewConfigMapBuilder(
@@ -37,6 +41,9 @@ func NewConfigMapBuilder(
 			options.Labels,
 			options.Annotations,
 		),
+		ClusterName:   options.ClusterName,
+		RoleName:      options.RoleName,
+		RolegroupName: options.RoleGroupName,
 	}
 }
 
@@ -181,14 +188,12 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 	cmBuilder := NewConfigMapBuilder(
 		client,
 		options.GetFullName(),
-		builder.ResourceOptions{
-			Labels:      options.GetLabels(),
-			Annotations: options.GetAnnotations(),
-			RoleGroupInfo: &builder.RoleGroupInfo{
-				ClusterName:   options.ClusterName,
-				RoleName:      options.RoleName,
-				RoleGroupName: options.RoleGroupName,
-			},
+		builder.Options{
+			ClusterName:   options.GetClusterName(),
+			RoleName:      options.GetRoleName(),
+			RoleGroupName: options.GetGroupName(),
+			Labels:        options.GetLabels(),
+			Annotations:   options.GetAnnotations(),
 		},
 	)
 
