@@ -1,0 +1,149 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kerberos
+spec:
+  bindings:
+  - name: relam
+    value: ZNCDATA.DEV
+  - name: kadminPassword
+    value: zncdatadev
+  - name: kadminKeytabSecret
+    value: kadmin-keytab
+  steps:
+  - try:
+    - apply:  # deploy operator
+        file: ../setup/olm.yaml
+    - assert:
+        file: ../setup/olm-assert.yaml
+  - try:
+    - apply:
+        file: ../setup/subs.yaml
+    - assert:
+        file: ../setup/subs-assert.yaml
+  - try:  # deploy listener and seret
+    - apply:
+        file: ../setup/listener.yaml
+    - assert:
+        file: ../setup/listener-assert.yaml
+    - apply:
+        file: ../setup/secret.yaml
+    - assert:
+        file: ../setup/secret-assert.yaml
+  - try:  # deploy kerberos
+    - apply:  # create a krb5 deployment and service, both named "krb5"
+        file: ../setup/krb5.yaml
+    - assert: 
+        file: ../setup/krb5-assert.yaml
+  - try:  # deploy krb5 SecretClass
+    - script:
+        env:
+        - name: RELAM
+          value: ($relam)
+        - name: NAMESPACE
+          value: ($namespace)
+        - name: DEPLOYMENT_NAME
+          value: krb5
+        - name: KADMIN_KEYTAB_SECRET
+          value: ($kadminKeytabSecret)
+        content: |
+          # debug node info
+          kubectl get node
+          # get pod of deploment by label
+          POD_NAME=$(kubectl get pod -n $NAMESPACE -l app=$DEPLOYMENT_NAME -o jsonpath="{.items[0].metadata.name}")
+
+          # check pod exist
+          if [ -z "$POD_NAME" ]; then
+            echo "pod not found"
+            exit 1
+          fi
+          
+          # get kadmin keytab
+          KADMIN_KEYTAB=$(kubectl exec -n $NAMESPACE $POD_NAME -- sh -c "cat /var/kerberos/krb5kdc/kadmin.keytab | base64 -w 0")
+
+          # create secret, name is $KADMIN_KEYTAB_SECRET
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: $KADMIN_KEYTAB_SECRET
+            namespace: $NAMESPACE
+          data:
+            keytab: $KADMIN_KEYTAB
+    - assert: # assert kadmin keytab secret
+        resource:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: ($kadminKeytabSecret)
+          data:
+            (keytab != ""): true
+    - apply:
+        resource:
+          apiVersion: secrets.zncdata.dev/v1alpha1
+          kind: SecretClass
+          metadata:
+            name: kerberos
+          spec:
+            backend:
+              kerberosKeytab:
+                realm: ($relam)
+                kdc: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
+                adminServer:
+                  mit:
+                    kadminServer: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
+                adminKeytabSecret:
+                  name: ($kadminKeytabSecret)
+                  namespace: ($namespace)
+                adminPrincipal: (join('', ['admin/admin@', ($relam)]))
+  - try:  # deploy zookeeper
+    - apply:
+        file: ../setup/zookeeper.yaml
+    - assert:
+        file: ../setup/zookeeper-assert.yaml
+  - try:  # deploy hdfs
+    - apply:
+        file: hdfs.yaml
+    - assert:
+        file: hdfs-assert.yaml
+    - script:
+        timeout: 300s
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        - name: KRB5_HOME
+          value: /zncdata/kerberos
+        content: |  # Note: The script has a large number of escape cases. hdfs access is limited to hdfs cluster resources, resulting in delays
+          # debug node info
+          kubectl get node
+
+          # pod name krb5-hdfs-default-namenode-0
+          kubectl exec -n $NAMESPACE krb5-hdfs-default-namenode-0 -c namenode -- sh -c "
+            set -ex
+            klist -kt /zncdata/kerberos/keytab | awk 'NR>3 {print \$4}' | head -n 1
+            echo init krb5
+            PRINCIPAL=\$(klist -kt /zncdata/kerberos/keytab | awk "'"NR>3 {print \$4}"'" | head -n 1)
+            echo current principal: $PRINCIPAL
+            kinit -kt /zncdata/kerberos/keytab \$PRINCIPAL
+
+            if hdfs dfs -test -d /hbase; then
+              echo hbase dir exist, everything is ok
+            else
+              echo hbase dir not exist, create it
+              hdfs dfs -mkdir -p /hbase
+              hdfs dfs -chown hbase /hbase
+            fi
+          "
+        
+    cleanup:
+    - wait:
+        apiVersion: v1
+        kind: Pod
+        name: simple-hdfs-default-namenode-0
+        for:
+          deletion: {}
+  - try:
+    - apply:
+        file: hbase.yaml
+    - assert:
+        file: hbase-assert.yaml

@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/part-of: zookeeper-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: zookeeper-operator
-  name: hdfs-znode
+  name: krb5-hdfs-znode
 spec:
   clusterRef:
     name: zk
@@ -18,29 +18,33 @@ kind: HdfsCluster
 metadata:
   labels:
     app.kubernetes.io/name: hdfscluster
-    app.kubernetes.io/instance: hdfs
+    app.kubernetes.io/instance: simple-hdfs
     app.kubernetes.io/part-of: hdfs-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: hdfs-operator
-  name: hdfs
+  name: krb5-hdfs
 spec:
   image:
     repository: quay.io/zncdatadev/hadoop
     tag: 3.3.4
   clusterConfig:
-    zookeeperConfigMapName: hdfs-znode
+    zookeeperConfigMapName: krb5-hdfs-znode
+    authentication:
+      tls:
+        secretClass: tls
+      kerberos:
+        secretClass: kerberos
   nameNode:
     roleGroups:
       default:
         replicas: 2
         config:
-          listenerClass: external-unstable
           resources:
             cpu:
               min: 200m
-              max: 500m
+              max: 1000m
             memory:
-              limit: "500Mi"
+              limit: "1000Mi"
           logging:
             namenode:
               loggers:
@@ -59,7 +63,6 @@ spec:
       default:
         replicas: 1
         config:
-          listenerClass: external-stable
           resources:
             cpu:
               min: 100m
@@ -83,9 +86,9 @@ spec:
           resources:
             cpu:
               min: 200m
-              max: 800m
+              max: 1000m
             memory:
-              limit: "500Mi"
+              limit: "1000Mi"
           logging:
             datanode:
               loggers:

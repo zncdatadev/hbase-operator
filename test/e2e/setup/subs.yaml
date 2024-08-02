@@ -1,3 +1,15 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: commons-sub
+spec:
+  channel: stable
+  name: commons-operator
+  source: kubedata-catalog
+  sourceNamespace: ($namespace)
+  installPlanApproval: Automated
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
@@ -5,6 +17,17 @@ metadata:
 spec:
   channel: stable
   name: listener-operator
+  source: kubedata-catalog
+  sourceNamespace: ($namespace)
+  installPlanApproval: Automated
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: secret-sub
+spec:
+  channel: stable
+  name: secret-operator
   source: kubedata-catalog
   sourceNamespace: ($namespace)
   installPlanApproval: Automated

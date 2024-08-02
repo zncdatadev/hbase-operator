@@ -1,0 +1,46 @@
+---
+apiVersion: zookeeper.zncdata.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  labels:
+    app.kubernetes.io/name: zookeeperznode
+    app.kubernetes.io/instance: hbase-znode
+    app.kubernetes.io/part-of: zookeeper-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: zookeeper-operator
+  name: krb5-hbase-znode
+spec:
+  clusterRef:
+    name: zk 
+---
+apiVersion: hbase.zncdata.dev/v1alpha1
+kind: HbaseCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: hbasecluster
+    app.kubernetes.io/instance: hbase
+    app.kubernetes.io/part-of: hbase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: hbase-operator
+  name: krb5-hbase
+spec:
+  image:
+    custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
+  clusterConfig:
+    zookeeperConfigMapName: krb5-hbase-znode
+    hdfsConfigMapName: krb5-hdfs
+    authentication:
+      kerberosSecretClass: kerberos
+      tlsSecretClass: tls
+  master:
+    roleGroups:
+      default:
+        replicas: 1
+  regionServer:
+    roleGroups:
+      default:
+        replicas: 1
+  restServer:
+    roleGroups:
+      default:
+        replicas: 1

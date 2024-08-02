@@ -385,7 +385,7 @@ chainsaw-setup: manifests kustomize ## Run the chainsaw setup
 
 .PHONY: chainsaw-test
 chainsaw-test: chainsaw ## Run the chainsaw test
-	KUBECONFIG=$(KIND_KUBECONFIG) $(CHAINSAW) test --cluster cluster-1=$(KIND_KUBECONFIG) --test-dir ./test/e2e
+	KUBECONFIG=$(KIND_KUBECONFIG) $(CHAINSAW) test --cluster cluster-1=$(KIND_KUBECONFIG) --test-dir ./test/e2e/kerberos
 
 .PHONY: chainsaw-cleanup
 chainsaw-cleanup: manifests kustomize ## Run the chainsaw cleanup
