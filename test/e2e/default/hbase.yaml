@@ -4,32 +4,31 @@ kind: ZookeeperZnode
 metadata:
   labels:
     app.kubernetes.io/name: zookeeperznode
-    app.kubernetes.io/instance: simple-hbase-znode
+    app.kubernetes.io/instance: hbase-znode
     app.kubernetes.io/part-of: zookeeper-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: zookeeper-operator
-  name: simple-hbase-znode
+  name: hbase-znode
 spec:
   clusterRef:
-    name: simple-zookeeper
-    namespace: ($namespace)
+    name: zk
 ---
 apiVersion: hbase.zncdata.dev/v1alpha1
 kind: HbaseCluster
 metadata:
   labels:
     app.kubernetes.io/name: hbasecluster
-    app.kubernetes.io/instance: simple-hbase
+    app.kubernetes.io/instance: hbase
     app.kubernetes.io/part-of: hbase-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: hbase-operator
-  name: simple-hbase
+  name: hbase
 spec:
   image:
     custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
   clusterConfig:
-    zookeeperConfigMapName: simple-hbase-znode
-    hdfsConfigMapName: simple-hdfs
+    zookeeperConfigMapName: hbase-znode
+    hdfsConfigMapName: hdfs
   master:
     roleGroups:
       default:
