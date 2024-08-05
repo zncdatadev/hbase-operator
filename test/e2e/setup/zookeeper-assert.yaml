@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: simple-zookeeper-default
+  name: zk-default
 status:
   availableReplicas: 2
   replicas: 2

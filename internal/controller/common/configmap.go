@@ -2,9 +2,12 @@ package common
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
@@ -12,11 +15,18 @@ import (
 	util "github.com/zncdatadev/operator-go/pkg/util"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	authz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
 )
 
 const (
-	HbaseKey = "hbase-site.xml"
-	LogKey   = "log4j.properties"
+	HbaseKey          = "hbase-site.xml"
+	LogKey            = "log4j.properties"
+	SSLClientFileName = "ssl-client.xml"
+	SSLServerFileName = "ssl-server.xml"
+)
+
+var (
+	logger = ctrl.Log.WithName("common")
 )
 
 var _ builder.ConfigBuilder = &ConfigMapBuilder{}
@@ -27,13 +37,30 @@ type ConfigMapBuilder struct {
 	ClusterName   string
 	RoleName      string
 	RolegroupName string
+
+	krb5Config *authz.HbaseKerberosConfig
 }
 
 func NewConfigMapBuilder(
 	client *client.Client,
 	name string,
+	krb5SecretClass string,
+	tlsSecretClass string,
 	options builder.Options,
 ) *ConfigMapBuilder {
+	var krb5Config *authz.HbaseKerberosConfig
+	if krb5SecretClass != "" && tlsSecretClass != "" {
+		krb5Config = authz.NewHbaseKerberosConfig(
+			client.GetOwnerNamespace(),
+			options.ClusterName,
+			options.RoleName,
+			options.RoleGroupName,
+			krb5SecretClass,
+			tlsSecretClass,
+		)
+
+	}
+
 	return &ConfigMapBuilder{
 		ConfigMapBuilder: *builder.NewConfigMapBuilder(
 			client,
@@ -44,16 +71,35 @@ func NewConfigMapBuilder(
 		ClusterName:   options.ClusterName,
 		RoleName:      options.RoleName,
 		RolegroupName: options.RoleGroupName,
+		krb5Config:    krb5Config,
 	}
 }
 
 func (b *ConfigMapBuilder) AddHbaseENVSh() error {
-	hbaseENVSh := `
-export HBASE_MANAGES_ZK="false"
-`
+
+	jvmOpts := b.getJVMOPTS()
+
+	hbaseENVSh := fmt.Sprintf(`
+export HBASE_MANAGES_ZK=false
+%s
+
+`,
+		jvmOpts,
+	)
 	b.AddData(map[string]string{"hbase-env.sh": util.IndentTab4Spaces(hbaseENVSh)})
+	logger.V(15).Info("Hbase ENV", "hbaseENVSh", hbaseENVSh, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
 
 	return nil
+}
+
+func (b *ConfigMapBuilder) getJVMOPTS() string {
+	var opts []string
+	if b.krb5Config != nil {
+		for k, v := range b.krb5Config.GetJVMOPTS() {
+			opts = append(opts, "-D"+k+"="+v)
+		}
+	}
+	return fmt.Sprintf(`export HBASE_%s_OPTS="$HBASE_OPTS %s"`, b.RoleName, strings.Join(opts, " "))
 }
 
 func (b *ConfigMapBuilder) AddLog4jProperties() error {
@@ -74,14 +120,35 @@ log4j.appender.FILE.layout=org.apache.log4j.xml.XMLLayout
 
 `
 	b.AddData(map[string]string{LogKey: util.IndentTab4Spaces(log4j)})
+	logger.V(15).Info("Log4j", "log4j", log4j, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
 	return nil
 }
 
 func (b *ConfigMapBuilder) AddSSLClientXML() error {
+	if b.krb5Config != nil {
+		data := b.krb5Config.GetSSLClientSettings()
+		sslClientXML := util.NewXMLConfigurationFromMap(data)
+		sslClientXMLXML, err := sslClientXML.Marshal()
+		if err != nil {
+			return err
+		}
+		b.AddData(map[string]string{SSLClientFileName: sslClientXMLXML})
+		logger.V(15).Info("SSL Client XML", "sslClientXML", sslClientXML, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
+	}
 	return nil
 }
 
-func (b *ConfigMapBuilder) AddServerXML() error {
+func (b *ConfigMapBuilder) AddSSLServerXML() error {
+	if b.krb5Config != nil {
+		data := b.krb5Config.GetSSLServerSttings()
+		serverXML := util.NewXMLConfigurationFromMap(data)
+		serverXMLXML, err := serverXML.Marshal()
+		if err != nil {
+			return err
+		}
+		b.AddData(map[string]string{SSLServerFileName: serverXMLXML})
+		logger.V(15).Info("Server XML", "serverXML", serverXML, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
+	}
 	return nil
 }
 
@@ -109,12 +176,17 @@ func (b *ConfigMapBuilder) AddHbaseSite(znode *ZnodeConfiguration) error {
 	hbaseSite.AddPropertyWithString("hbase.rootdir", "/hbase", "")
 	hbaseSite.AddPropertyWithString("hbase.unsafe.regionserver.hostname.disable.master.reversedns", "true", "")
 
+	if b.krb5Config != nil {
+		hbaseSite.AddPropertiesWithMap(b.krb5Config.GetHbaseSite())
+	}
+
 	hbaseSiteXML, err := hbaseSite.Marshal()
 	if err != nil {
 		return err
 	}
 
 	b.AddData(map[string]string{HbaseKey: hbaseSiteXML})
+	logger.V(15).Info("Hbase Site", "hbaseSite", hbaseSite, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
 	return nil
 }
 
@@ -165,7 +237,7 @@ func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) *reconciler.Resu
 		return reconciler.NewResult(true, 0, err)
 	}
 
-	if err := builder.AddServerXML(); err != nil {
+	if err := builder.AddSSLServerXML(); err != nil {
 		return reconciler.NewResult(true, 0, err)
 	}
 
@@ -184,10 +256,18 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 	options reconciler.RoleGroupInfo,
 	spec T,
 ) *ConfigMapReconciler[T] {
+	krb5SecretClass, tlsSecretClass := "", ""
+	if clusterConfig.Authentication != nil {
+		krb5SecretClass = clusterConfig.Authentication.KerberosSecretClass
+		tlsSecretClass = clusterConfig.Authentication.TlsSecretClass
+		logger.Info("Using authentication configuration", "kerberosSecretClass", krb5SecretClass, "tlsSecretClass", tlsSecretClass, "clusterName", options.GetClusterName(), "roleName", options.GetRoleName(), "roleGroupName", options.GetGroupName())
+	}
 
 	cmBuilder := NewConfigMapBuilder(
 		client,
 		options.GetFullName(),
+		krb5SecretClass,
+		tlsSecretClass,
 		builder.Options{
 			ClusterName:   options.GetClusterName(),
 			RoleName:      options.GetRoleName(),

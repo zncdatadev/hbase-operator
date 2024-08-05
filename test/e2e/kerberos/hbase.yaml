@@ -8,10 +8,10 @@ metadata:
     app.kubernetes.io/part-of: zookeeper-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: zookeeper-operator
-  name: hbase-znode
+  name: krb5-hbase-znode
 spec:
   clusterRef:
-    name: zk
+    name: zk 
 ---
 apiVersion: hbase.zncdata.dev/v1alpha1
 kind: HbaseCluster
@@ -22,13 +22,16 @@ metadata:
     app.kubernetes.io/part-of: hbase-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: hbase-operator
-  name: hbase
+  name: krb5-hbase
 spec:
   image:
     custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
   clusterConfig:
-    zookeeperConfigMapName: hbase-znode
-    hdfsConfigMapName: hdfs
+    zookeeperConfigMapName: krb5-hbase-znode
+    hdfsConfigMapName: krb5-hdfs
+    authentication:
+      kerberosSecretClass: kerberos
+      tlsSecretClass: tls
   master:
     roleGroups:
       default:

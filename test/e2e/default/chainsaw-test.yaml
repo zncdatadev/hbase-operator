@@ -29,14 +29,13 @@ spec:
     - assert:
         file: ../setup/hdfs-assert.yaml
     cleanup:
-    - wait:
-        apiVersion: v1
-        kind: Pod
-        name: simple-hdfs-default-namenode-0
-        for:
-          deletion: {}
+    - sleep:
+        duration: 20s
   - try:
     - apply:
         file: hbase.yaml
     - assert:
         file: hbase-assert.yaml
+    cleanup:
+    - sleep:
+        duration: 10s

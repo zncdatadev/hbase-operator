@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hbase-init-dir
+  labels:
+    name: hbase-init-dir
+spec:
+  containers:
+  - name: hbase-init-dir
+    image: quay.io/zncdatadev/hadoop:3.3.4
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "300m"
+    env:
+    - name: KRB5_CONFIG
+      value: /stackable/kerberos/krb5.conf
+    - name: HADOOP_CONF_DIR
+      value: /stackable/kerberos
+    command: 
+      - "bash"
+      - "-c"
+      - |
+        set -ex
+        tail -f /dev/null
+        
+        PRINCIPAL=$(klist -kt /stackable/kerberos/keytab | awk 'NR>3 {print $4}' | head -n 1)
+        kinit -kt /stackable/kerberos/keytab $PRINCIPAL
+
+        hdfs dfs -mkdir -p /hbase
+        hdfs dfs -chown hbase /hbase
+    volumeMounts:
+    - name: keytab
+      mountPath: /stackable/kerberos
+    ports:
+    - containerPort: 8080
+      name: http
+  volumes:
+  - name: keytab
+    ephemeral:
+      volumeClaimTemplate:
+        metadata:
+          annotations:
+            secrets.zncdata.dev/class: kerberos
+            secrets.zncdata.dev/scope: pod,service=hbase-init-dir
+            secrets.zncdata.dev/kerberosServiceNames: foo
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: secrets.zncdata.dev
+          resources:
+            requests:
+              storage: 1Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hbase-init-dir
+spec:
+  selector:
+    app: hbase-init-dir
+  ports:
+  - port: 80
+    targetPort: http

@@ -3,14 +3,15 @@ package common
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
+	corev1 "k8s.io/api/core/v1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	auzhz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
 )
 
 var (
@@ -29,6 +30,8 @@ type StatefulSetBuilder struct {
 	ClusterConfig *hbasev1alph1.ClusterConfigSpec
 	RoleName      string
 	ClusterName   string
+
+	krb5Config *auzhz.HbaseKerberosConfig
 }
 
 func NewStatefulSetBuilder(
@@ -38,14 +41,30 @@ func NewStatefulSetBuilder(
 	replicas *int32,
 	ports []corev1.ContainerPort,
 	image *util.Image,
+	krb5SecretClass string,
+	tlsSecretClass string,
 	options builder.WorkloadOptions,
 ) *StatefulSetBuilder {
+
+	var krb5Config *auzhz.HbaseKerberosConfig
+	if krb5SecretClass != "" && tlsSecretClass != "" {
+		krb5Config = auzhz.NewHbaseKerberosConfig(
+			client.GetOwnerNamespace(),
+			options.ClusterName,
+			options.RoleName,
+			options.RoleGroupName,
+			krb5SecretClass,
+			tlsSecretClass,
+		)
+	}
 
 	return &StatefulSetBuilder{
 		StatefulSet:   *builder.NewStatefulSetBuilder(client, name, replicas, image, options),
 		Ports:         ports,
 		ClusterConfig: clusterConfig,
 		RoleName:      options.RoleName,
+		ClusterName:   options.ClusterName,
+		krb5Config:    krb5Config,
 	}
 
 }
@@ -99,11 +118,16 @@ func (b *StatefulSetBuilder) getVolumes() []corev1.Volume {
 func (b *StatefulSetBuilder) GetMainContainerCommanArgs() []string {
 	hbaseSubArg := roleNameToCommandArg[b.RoleName]
 
-	// TODO: add vector logging and kerberos commands
+	setupKrb5 := ""
+	if b.krb5Config != nil {
+		setupKrb5 = b.krb5Config.GetContainerCommands()
+	}
+
 	arg := `mkdir -p /stackable/conf
 cp /stackable/tmp/hdfs/* /stackable/conf
 cp /stackable/tmp/hbase/* /stackable/conf
 
+` + setupKrb5 + `
 
 prepare_signal_handlers()
 {
@@ -153,7 +177,7 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 			Value: "/stackable/conf",
 		},
 	}
-	// TODO: add kerberos env vars
+
 	return objs
 }
 
@@ -166,6 +190,11 @@ func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
 		AddVolumeMounts(b.getVolumeMounts()).
 		AddEnvVars(b.getEnvVars()).
 		AddPorts(b.Ports)
+
+	if b.krb5Config != nil {
+		mainContainerBuilder.AddEnvVars(b.krb5Config.GetContainerEnvvars())
+		mainContainerBuilder.AddVolumeMounts(b.krb5Config.GetVolumeMounts())
+	}
 
 	// TODO: add vector container
 
@@ -197,6 +226,10 @@ func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, erro
 	b.AddContainers(b.buildContainer())
 	b.AddVolumes(b.getVolumes())
 	b.SetAffinity(b.GetDefaultAffinityBuilder().Build())
+
+	if b.krb5Config != nil {
+		b.AddVolumes(b.krb5Config.GetVolumes())
+	}
 	return b.GetObject()
 }
 

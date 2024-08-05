@@ -43,17 +43,12 @@ spec:
                 properties:
                   authentication:
                     properties:
-                      kerberos:
-                        properties:
-                          secretClass:
-                            type: string
-                        required:
-                        - secretClass
-                        type: object
+                      kerberosSecretClass:
+                        type: string
                       tlsSecretClass:
                         type: string
                     required:
-                    - kerberos
+                    - kerberosSecretClass
                     - tlsSecretClass
                     type: object
                   hdfsConfigMapName:

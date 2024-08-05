@@ -52,6 +52,13 @@ func NewStatefulSetReconciler(
 		options.Affinity = spec.Config.Affinity
 	}
 
+	krb5SecretClass, tlsSecretClass := "", ""
+
+	if clusterConfig.Authentication != nil {
+		krb5SecretClass = clusterConfig.Authentication.KerberosSecretClass
+		tlsSecretClass = clusterConfig.Authentication.TlsSecretClass
+	}
+
 	stsBuilder := common.NewStatefulSetBuilder(
 		client,
 		roleGroupInfo.GetFullName(),
@@ -59,6 +66,8 @@ func NewStatefulSetReconciler(
 		spec.Replicas,
 		ports,
 		image,
+		krb5SecretClass,
+		tlsSecretClass,
 		options,
 	)
 

@@ -65,15 +65,10 @@ type ClusterConfigSpec struct {
 
 type AuthenticationSpec struct {
 	// +kubebuilder:validation:Required
-	Kerberos *KerberosSpec `json:"kerberos"`
+	KerberosSecretClass string `json:"kerberosSecretClass"`
 
 	// +kubebuilder:validation:Required
 	TlsSecretClass string `json:"tlsSecretClass"`
-}
-
-type KerberosSpec struct {
-	// +kubebuilder:validation:Required
-	SecretClass string `json:"secretClass"`
 }
 
 // HbaseClusterStatus defines the observed state of HbaseCluster

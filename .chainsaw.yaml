@@ -8,9 +8,10 @@ spec:
     assert: 300s
     cleanup: 120s
     delete: 120s
-    error: 240s
-    exec: 200s
+    error: 180s
+    exec: 300s
   skipDelete: false
+  # skipDelete: true
   failFast: true
   forceTerminationGracePeriod: 10s
   parallel: 1
