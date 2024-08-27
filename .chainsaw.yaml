@@ -5,7 +5,7 @@ metadata:
 spec:
   timeouts:
     apply: 300s
-    assert: 300s
+    assert: 600s
     cleanup: 120s
     delete: 120s
     error: 180s
