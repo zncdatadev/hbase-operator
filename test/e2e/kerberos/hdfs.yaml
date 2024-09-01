@@ -24,9 +24,6 @@ metadata:
     app.kubernetes.io/created-by: hdfs-operator
   name: krb5-hdfs
 spec:
-  image:
-    repository: quay.io/zncdatadev/hadoop
-    tag: 3.3.4
   clusterConfig:
     zookeeperConfigMapName: krb5-hdfs-znode
     authentication:
@@ -39,12 +36,6 @@ spec:
       default:
         replicas: 2
         config:
-          resources:
-            cpu:
-              min: 200m
-              max: 1000m
-            memory:
-              limit: "1000Mi"
           logging:
             namenode:
               loggers:
@@ -63,12 +54,6 @@ spec:
       default:
         replicas: 1
         config:
-          resources:
-            cpu:
-              min: 100m
-              max: 500m
-            memory:
-              limit: "500Mi"
           logging:
             journalNode:
               loggers:
@@ -83,12 +68,6 @@ spec:
       default:
         replicas: 2
         config:
-          resources:
-            cpu:
-              min: 200m
-              max: 1000m
-            memory:
-              limit: "1000Mi"
           logging:
             datanode:
               loggers:
