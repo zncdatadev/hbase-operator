@@ -106,6 +106,8 @@ spec:
         file: hdfs.yaml
     - assert:
         file: hdfs-assert.yaml
+    - sleep:
+        duration: 10s
     - script:
         timeout: 300s
         env:
@@ -117,24 +119,23 @@ spec:
           # debug node info
           kubectl get node
 
-          # pod name krb5-hdfs-default-namenode-0
-          kubectl exec -n $NAMESPACE krb5-hdfs-default-namenode-0 -c namenode -- sh -c "
+          kubectl exec -n $NAMESPACE krb5-hdfs-default-namenode-0 -c namenode -- sh -c '
             set -ex
-            klist -kt /zncdata/kerberos/keytab | awk 'NR>3 {print \$4}' | head -n 1
-            echo init krb5
-            PRINCIPAL=\$(klist -kt /zncdata/kerberos/keytab | awk "'"NR>3 {print \$4}"'" | head -n 1)
-            echo current principal: $PRINCIPAL
-            kinit -kt /zncdata/kerberos/keytab \$PRINCIPAL
+            klist -kt /kubedoop/kerberos/keytab | awk "NR>3 {print \$4}" | head -n 1
+            echo "init krb5"
+            PRINCIPAL=$(klist -kt /kubedoop/kerberos/keytab | awk "NR>3 {print \$4}" | head -n 1)
+            echo "current principal: $PRINCIPAL"
+            kinit -kt /kubedoop/kerberos/keytab $PRINCIPAL
+            klist
 
             if hdfs dfs -test -d /hbase; then
-              echo hbase dir exist, everything is ok
+              echo "hbase dir exist, everything is ok"
             else
-              echo hbase dir not exist, create it
+              echo "hbase dir not exist, create it"
               hdfs dfs -mkdir -p /hbase
               hdfs dfs -chown hbase /hbase
             fi
-          "
-        
+          '
     cleanup:
     - sleep:
         duration: 30s
