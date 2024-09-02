@@ -30,7 +30,7 @@ spec:
         file: ../setup/hdfs-assert.yaml
     cleanup:
     - sleep:
-        duration: 20s
+        duration: 30s
   - try:
     - apply:
         file: hbase.yaml
@@ -38,4 +38,4 @@ spec:
         file: hbase-assert.yaml
     cleanup:
     - sleep:
-        duration: 10s
+        duration: 20s

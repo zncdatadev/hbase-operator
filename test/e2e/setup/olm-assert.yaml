@@ -2,12 +2,12 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
-  name: zncdata-stack
+  name: kubedoop
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: kubedata-catalog
+  name: kubedoop-catalog
 status:
   connectionState:
     lastObservedState: READY
