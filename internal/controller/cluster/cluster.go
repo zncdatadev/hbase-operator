@@ -40,16 +40,17 @@ func NewClusterReconciler(
 
 func (r *Reconciler) GetImage() *util.Image {
 	image := &util.Image{
-		Repository:     hbasev1alpha1.DefaultRepository,
-		ProductName:    "hbase",
-		StackVersion:   "0.0.1",
-		ProductVersion: hbasev1alpha1.DefaultProductVersion,
-		PullPolicy:     &[]corev1.PullPolicy{corev1.PullIfNotPresent}[0],
+		Repo:            hbasev1alpha1.DefaultRepository,
+		ProductName:     hbasev1alpha1.DefaultProductName,
+		PlatformVersion: hbasev1alpha1.DefaultPlatformVersion,
+		ProductVersion:  hbasev1alpha1.DefaultProductVersion,
+		PullPolicy:      &[]corev1.PullPolicy{corev1.PullIfNotPresent}[0],
 	}
 	if r.Spec.Image != nil {
 		image.Custom = r.Spec.Image.Custom
-		image.Repository = r.Spec.Image.Repository
+		image.Repo = r.Spec.Image.Repository
 		image.ProductVersion = r.Spec.Image.ProductVersion
+		image.PlatformVersion = r.Spec.Image.PlatformVersion
 		image.PullPolicy = r.Spec.Image.PullPolicy
 		image.PullSecretName = r.Spec.Image.PullSecretName
 	}

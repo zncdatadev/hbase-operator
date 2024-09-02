@@ -5,6 +5,7 @@ import (
 
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/constants"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -205,13 +206,13 @@ func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
 
 func (b *StatefulSetBuilder) GetDefaultAffinityBuilder() *AffinityBuilder {
 	affinityLabels := map[string]string{
-		util.AppKubernetesInstanceName: b.ClusterName,
-		util.AppKubernetesNameName:     "hbase",
+		constants.LabelKubernetesInstance: b.ClusterName,
+		constants.LabelKubernetesName:     "hbase",
 	}
 	antiAffinityLabels := map[string]string{
-		util.AppKubernetesInstanceName:  b.ClusterName,
-		util.AppKubernetesNameName:      "hbase",
-		util.AppKubernetesComponentName: b.RoleName,
+		constants.LabelKubernetesInstance:  b.ClusterName,
+		constants.LabelKubernetesName:      "hbase",
+		constants.LabelKubernetesComponent: b.RoleName,
 	}
 
 	affinity := NewAffinityBuilder(

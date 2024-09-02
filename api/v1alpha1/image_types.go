@@ -5,8 +5,10 @@ import (
 )
 
 const (
-	DefaultRepository     = "quay.io/zncdatadev"
-	DefaultProductVersion = "2.4.17"
+	DefaultRepository      = "quay.io/zncdatadev"
+	DefaultProductVersion  = "2.4.17"
+	DefaultPlatformVersion = "0.0.0-dev"
+	DefaultProductName     = "hbase"
 )
 
 type ImageSpec struct {
@@ -18,7 +20,8 @@ type ImageSpec struct {
 	Repository string `json:"repository,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	StackVersion string `json:"stackVersion,omitempty"`
+	// +kubebuilder:default="0.0.0-dev"
+	PlatformVersion string `json:"platformVersion,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="2.4.17"
@@ -29,5 +32,6 @@ type ImageSpec struct {
 	PullPolicy *corev1.PullPolicy `json:"pullPolicy,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="hbase"
 	PullSecretName string `json:"pullSecretName,omitempty"`
 }
