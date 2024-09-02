@@ -259,7 +259,7 @@ bundle-push: ## Push the bundle image.
 bundle-buildx: ## Build the bundle image.
 	- $(CONTAINER_TOOL) buildx create --name project-v3-builder
 	$(CONTAINER_TOOL) buildx use project-v3-builder
-	$(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag $(BUNDLE_IMG) -f bundle.Dockerfile.cross .
+	$(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag $(BUNDLE_IMG) -f bundle.Dockerfile .
 	$(CONTAINER_TOOL) buildx rm project-v3-builder
 
 .PHONY: bundle-run
