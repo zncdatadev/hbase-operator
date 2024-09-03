@@ -10533,7 +10533,6 @@ spec:
                       type: object
                     type: object
                 required:
-                - podDisruptionBudget
                 - roleGroups
                 type: object
               regionServer:
@@ -20971,12 +20970,8 @@ spec:
                           default: 1
                           format: int32
                           type: integer
-                      required:
-                      - podDisruptionBudget
                       type: object
                     type: object
-                required:
-                - roleGroups
                 type: object
               restServer:
                 properties:
@@ -31416,12 +31411,10 @@ spec:
                       type: object
                     type: object
                 required:
-                - podDisruptionBudget
                 - roleGroups
                 type: object
             required:
             - clusterConfig
-            - clusterOperation
             - image
             type: object
           status:

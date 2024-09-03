@@ -18,6 +18,10 @@ spec:
         file: ../setup/listener.yaml
     - assert:
         file: ../setup/listener-assert.yaml
+    - apply:
+        file: ../setup/secret.yaml
+    - assert:
+        file: ../setup/secret-assert.yaml
   - try:
     - apply:
         file: ../setup/zookeeper.yaml
