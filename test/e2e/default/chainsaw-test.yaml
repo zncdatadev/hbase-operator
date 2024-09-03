@@ -27,6 +27,9 @@ spec:
         file: ../setup/zookeeper.yaml
     - assert:
         file: ../setup/zookeeper-assert.yaml
+    cleanup:
+    - sleep:
+        duration: 30s
   - try:
     - apply:
         file: ../setup/hdfs.yaml
@@ -34,7 +37,7 @@ spec:
         file: ../setup/hdfs-assert.yaml
     cleanup:
     - sleep:
-        duration: 30s
+        duration: 5s
   - try:
     - apply:
         file: hbase.yaml
@@ -42,4 +45,4 @@ spec:
         file: hbase-assert.yaml
     cleanup:
     - sleep:
-        duration: 20s
+        duration: 5s
