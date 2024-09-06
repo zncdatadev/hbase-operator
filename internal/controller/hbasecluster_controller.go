@@ -93,17 +93,21 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	if result := clusterReconciler.Reconcile(ctx); result.RequeueOrNot() {
-		return result.CtrlResult()
+	if result, err := clusterReconciler.Reconcile(ctx); err != nil {
+		return ctrl.Result{}, err
+	} else if !result.IsZero() {
+		return result, nil
 	}
 
-	logger.Info("Cluster reconciled")
+	logger.Info("Cluster resource reconciled, checking if ready.", "cluster", instance.Name, "namespace", instance.Namespace)
 
-	if result := clusterReconciler.Ready(ctx); result.RequeueOrNot() {
-		return result.CtrlResult()
+	if result, err := clusterReconciler.Ready(ctx); err != nil {
+		return ctrl.Result{}, err
+	} else if !result.IsZero() {
+		return result, nil
 	}
 
-	logger.V(1).Info("Reconcile finished")
+	logger.V(1).Info("Reconcile finished.", "cluster", instance.Name, "namespace", instance.Namespace)
 
 	return ctrl.Result{}, nil
 }
