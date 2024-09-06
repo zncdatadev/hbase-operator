@@ -116,6 +116,22 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
+GOLANGCI_LINT_VERSION ?= v1.60.3
+golangci-lint:
+	@[ -f $(GOLANGCI_LINT) ] || { \
+	set -e ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) $(GOLANGCI_LINT_VERSION) ;\
+	}
+
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint linter & yamllint
+	$(GOLANGCI_LINT) run --timeout 5m
+
+.PHONY: lint-fix
+lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
+	$(GOLANGCI_LINT) run --fix
+
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
@@ -123,7 +139,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build: manifests generate fmt vet ## Build manager binary.
+build: manifests generate fmt vet lint ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
 .PHONY: run
@@ -200,7 +216,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.2
-CONTROLLER_TOOLS_VERSION ?= v0.15.0
+CONTROLLER_TOOLS_VERSION ?= v0.16.2
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -367,14 +383,33 @@ kind-delete: kind ## Delete a kind cluster.
 
 # chainsaw
 
-CHAINSAW_VERSION ?= v0.2.6
-CHAINSAW = $(LOCALBIN)/chainsaw
+CHAINSAW_VERSION ?= v0.2.8
+CHAINSAW ?= $(LOCALBIN)/chainsaw
 
+# Use `grep 0.2.6 > /dev/null` instead of `grep -q 0.2.6`. It will not be able to determine the version number, 
+# although the execution in the shell is normal, but in the makefile does fail to understand the mechanism in the makefile
+# The operation ends by using `touch` to change the time of the file so that its timestamp is further back than the directory, 
+# so that no subsequent logic is performed after the `chainsaw` check is successful in relying on the `$(CHAINSAW)` target.
 .PHONY: chainsaw
 chainsaw: $(CHAINSAW) ## Download chainsaw locally if necessary.
 $(CHAINSAW): $(LOCALBIN)
-	test -s $(LOCALBIN)/chainsaw && $(LOCALBIN)/chainsaw version | grep -q $(CHAINSAW_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/kyverno/chainsaw@$(CHAINSAW_VERSION)
+	@{ \
+	set -xe ;\
+	if test -x $(LOCALBIN)/chainsaw && ! $(LOCALBIN)/chainsaw version | grep $(CHAINSAW_VERSION:v%=%) > /dev/null; then \
+		echo "$(LOCALBIN)/chainsaw version is not expected $(CHAINSAW_VERSION). Removing it before installing."; \
+		rm -rf $(LOCALBIN)/chainsaw; \
+	fi; \
+	if test ! -s $(LOCALBIN)/chainsaw; then \
+		mkdir -p $(dir $(CHAINSAW)) ;\
+		TMP=$(shell mktemp -d) ;\
+		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+		curl -sSL https://github.com/kyverno/chainsaw/releases/download/$(CHAINSAW_VERSION)/chainsaw_$${OS}_$${ARCH}.tar.gz | tar -xz -C $$TMP ;\
+		mv $$TMP/chainsaw $(CHAINSAW) ;\
+		rm -rf $$TMP ;\
+		chmod +x $(CHAINSAW) ;\
+		touch $(CHAINSAW) ;\
+	fi; \
+	}
 
 .PHONY: chainsaw-setup
 chainsaw-setup: manifests kustomize ## Run the chainsaw setup
@@ -385,7 +420,7 @@ chainsaw-setup: manifests kustomize ## Run the chainsaw setup
 
 .PHONY: chainsaw-test
 chainsaw-test: chainsaw ## Run the chainsaw test
-	KUBECONFIG=$(KIND_KUBECONFIG) $(CHAINSAW) test --cluster cluster-1=$(KIND_KUBECONFIG) --test-dir ./test/e2e/
+	KUBECONFIG=$(KIND_KUBECONFIG) $(CHAINSAW) test --cluster cluster-1=$(KIND_KUBECONFIG) --test-dir ./test/e2e/default
 
 .PHONY: chainsaw-cleanup
 chainsaw-cleanup: manifests kustomize ## Run the chainsaw cleanup

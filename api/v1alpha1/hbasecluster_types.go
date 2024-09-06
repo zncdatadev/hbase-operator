@@ -32,7 +32,7 @@ type HbaseClusterSpec struct {
 	// +kubebuilder:validation:Required
 	ClusterConfigSpec *ClusterConfigSpec `json:"clusterConfig,omitempty"`
 
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	ClusterOperationSpec *commonsv1alpha1.ClusterOperationSpec `json:"clusterOperation,omitempty"`
 
 	// +kubebuilder:validation:Optional

@@ -12,7 +12,7 @@ type RestServerSpec struct {
 	// +kubebuilder:validation:Required
 	RoleGroups map[string]RestServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional

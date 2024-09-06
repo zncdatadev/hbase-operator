@@ -7,6 +7,7 @@ import (
 	"github.com/zncdatadev/hbase-operator/internal/controller/common"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/constants"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -73,9 +74,9 @@ func NewStatefulSetReconciler(
 	affinityBuilder := stsBuilder.GetDefaultAffinityBuilder()
 
 	hdfsDatanodeLabels := map[string]string{
-		util.AppKubernetesInstanceName:  clusterConfig.HdfsConfigMapName,
-		util.AppKubernetesNameName:      "hdfs",
-		util.AppKubernetesComponentName: "datanode",
+		constants.LabelKubernetesInstance:  clusterConfig.HdfsConfigMapName,
+		constants.LabelKubernetesName:      "hdfs",
+		constants.LabelKubernetesComponent: "datanode",
 	}
 
 	affinityBuilder.AddPodAffinity(
