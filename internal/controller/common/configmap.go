@@ -214,37 +214,37 @@ func (r *ConfigMapReconciler[T]) GetZKZnodeConfig(ctx context.Context) (*ZnodeCo
 	return &ZnodeConfiguration{ConfigMap: obj}, nil
 }
 
-func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) *reconciler.Result {
+func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) (ctrl.Result, error) {
 	znode, err := r.GetZKZnodeConfig(ctx)
 	if err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 	builder := r.GetBuilder()
 
 	if err := builder.AddHbaseSite(znode); err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	if err := builder.AddHbaseENVSh(); err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	if err := builder.AddLog4jProperties(); err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	if err := builder.AddSSLClientXML(); err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	if err := builder.AddSSLServerXML(); err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	resource, err := builder.Build(ctx)
 
 	if err != nil {
-		return reconciler.NewResult(true, 0, err)
+		return ctrl.Result{}, err
 	}
 
 	return r.ResourceReconcile(ctx, resource)

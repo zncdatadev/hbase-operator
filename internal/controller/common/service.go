@@ -27,6 +27,7 @@ func NewServiceReconciler(
 			options.GetAnnotations(),
 			ports,
 			&[]corev1.ServiceType{corev1.ServiceTypeClusterIP}[0],
+			false,
 		),
 	}
 }
