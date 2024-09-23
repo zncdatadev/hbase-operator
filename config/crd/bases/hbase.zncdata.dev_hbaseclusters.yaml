@@ -77,11 +77,11 @@ spec:
                 properties:
                   custom:
                     type: string
-                  platformVersion:
+                  kubedoopVersion:
                     default: 0.0.0-dev
                     type: string
                   productVersion:
-                    default: 2.4.17
+                    default: 2.4.18
                     type: string
                   pullPolicy:
                     default: IfNotPresent
@@ -31415,7 +31415,6 @@ spec:
                 type: object
             required:
             - clusterConfig
-            - image
             type: object
           status:
             description: HbaseClusterStatus defines the observed state of HbaseCluster

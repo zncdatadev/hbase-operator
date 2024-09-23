@@ -3,14 +3,15 @@ kind: Configuration
 metadata:
   name: custom-config
 spec:
+  # namespace: chainsaw
   timeouts:
     apply: 300s
-    assert: 600s
+    assert: 300s
     cleanup: 120s
     delete: 120s
     error: 180s
     exec: 300s
-  skipDelete: false
+  # skipDelete: true
   failFast: true
   forceTerminationGracePeriod: 10s
   parallel: 1

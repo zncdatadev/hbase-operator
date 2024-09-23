@@ -24,8 +24,6 @@ metadata:
     app.kubernetes.io/created-by: hbase-operator
   name: hbase
 spec:
-  image:
-    custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
   clusterConfig:
     zookeeperConfigMapName: hbase-znode
     hdfsConfigMapName: hdfs

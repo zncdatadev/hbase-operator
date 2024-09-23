@@ -4,27 +4,26 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/zncdatadev/operator-go/pkg/constants"
+	"github.com/zncdatadev/operator-go/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/zncdatadev/operator-go/pkg/util"
 )
 
 var (
-	ZNCdataRootDir   = "/stackable"
 	TlsStorePassword = "changeit"
 
-	TlsStoreDir  = path.Join(ZNCdataRootDir, "tls")
+	TlsStoreDir  = path.Join(constants.KubedoopRoot, "tls")
 	TrustoreFile = path.Join(TlsStoreDir, "truststore.p12")
 	KeystoreFile = path.Join(TlsStoreDir, "keystore.p12")
 	TrustoreType = "pkcs12"
 	KeystoreType = "pkcs12"
 
-	ConfigDir = path.Join(ZNCdataRootDir, "conf")
+	ConfigDir = path.Join(constants.KubedoopRoot, "conf")
 
 	AuthenticationType = "kerberos"
-	KerberosDir        = path.Join(ZNCdataRootDir, "kerberos")
+	KerberosDir        = path.Join(constants.KubedoopRoot, "kerberos")
 	Krb5ConfigFile     = path.Join(KerberosDir, "krb5.conf")
 	KetytabFile        = path.Join(KerberosDir, "keytab")
 )
@@ -218,10 +217,10 @@ func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
 
 func (c *HbaseKerberosConfig) GetContainerCommands() string {
 	cmds := `
-export KERBEROS_REALM=$(grep -oP 'default_realm = \K.*' /stackable/kerberos/krb5.conf)
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g" ` + ConfigDir + `/core-site.xml
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + ConfigDir + `/hbase-site.xml
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + ConfigDir + `/hdfs-site.xml
+export KERBEROS_REALM=$(grep -oP 'default_realm = \K.*' ` + Krb5ConfigFile + `)
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g" ` + path.Join(constants.KubedoopConfigDir, "core-site.xml") + `
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(constants.KubedoopConfigDir, "hdfs-site.xml") + `
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(constants.KubedoopConfigDir, "hbase-site.xml") + `
 `
 
 	return util.IndentTab4Spaces(cmds)
