@@ -64,11 +64,30 @@ type ClusterConfigSpec struct {
 }
 
 type AuthenticationSpec struct {
-	// +kubebuilder:validation:Required
-	KerberosSecretClass string `json:"kerberosSecretClass"`
+	// +kubebuilder:validation:Optional
+	AuthenticationClass string `json:"authenticationClass,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	Oidc *OidcSpec `json:"oidc,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	KerberosSecretClass string `json:"kerberosSecretClass,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	TlsSecretClass string `json:"tlsSecretClass,omitempty"`
+}
+
+// OidcSpec defines the OIDC spec.
+type OidcSpec struct {
+	// OIDC client credentials secret. It must contain the following keys:
+	//   - `CLIENT_ID`: The client ID of the OIDC client.
+	//   - `CLIENT_SECRET`: The client secret of the OIDC client.
+	// credentials will omit to pod environment variables.
 	// +kubebuilder:validation:Required
-	TlsSecretClass string `json:"tlsSecretClass"`
+	ClientCredentialsSecret string `json:"clientCredentialsSecret"`
+
+	// +kubebuilder:validation:Optional
+	ExtraScopes []string `json:"extraScopes,omitempty"`
 }
 
 // HbaseClusterStatus defines the observed state of HbaseCluster

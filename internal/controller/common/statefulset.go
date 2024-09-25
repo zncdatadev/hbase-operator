@@ -4,6 +4,7 @@ import (
 	"context"
 	"path"
 
+	authv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/authentication/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/constants"
@@ -14,6 +15,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	"github.com/zncdatadev/hbase-operator/internal/controller/authz"
 	auzhz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
 )
 
@@ -257,9 +259,6 @@ func (b *StatefulSetBuilder) getProbeHandler() *corev1.ProbeHandler {
 		return nil
 	}
 
-	if prob == nil {
-		return nil
-	}
 	return prob
 }
 
@@ -291,6 +290,41 @@ func (b *StatefulSetBuilder) GetStartupProbe() *corev1.Probe {
 		TimeoutSeconds:      10,
 	}
 }
+func (b *StatefulSetBuilder) buildOidcContainer(ctx context.Context) (*corev1.Container, error) {
+	if b.ClusterConfig.Authentication == nil || b.ClusterConfig.Authentication.AuthenticationClass == "" {
+		return nil, nil
+	}
+
+	authClass := &authv1alpha1.AuthenticationClass{}
+	if err := b.GetClient().GetWithOwnerNamespace(ctx, b.ClusterConfig.Authentication.AuthenticationClass, authClass); err != nil {
+		return nil, err
+	}
+
+	if authClass.Spec.AuthenticationProvider.OIDC == nil || b.ClusterConfig.Authentication.Oidc == nil {
+		logger.V(5).Info("OIDC not configured", "cluster", b.ClusterName, "role", b.RoleName, "authClass", b.ClusterConfig.Authentication.AuthenticationClass, "oidc", b.ClusterConfig.Authentication.Oidc)
+		return nil, nil
+	}
+
+	var upstreamPort int32
+
+	for _, port := range b.Ports {
+		if port.Name == "ui-http" {
+			upstreamPort = port.ContainerPort
+			break
+		}
+	}
+
+	oidc := authz.NewOidc(
+		string(b.GetClient().GetOwnerReference().GetUID()),
+		b.GetImage(),
+		upstreamPort,
+		b.ClusterConfig.Authentication.Oidc,
+		authClass.Spec.AuthenticationProvider.OIDC,
+	)
+
+	return oidc.GetContainer(), nil
+}
+
 func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, error) {
 	b.AddContainers(b.buildContainer())
 	b.AddVolumes(b.getVolumes())
@@ -299,6 +333,16 @@ func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, erro
 	if b.krb5Config != nil {
 		b.AddVolumes(b.krb5Config.GetVolumes())
 	}
+
+	oidcContainer, err := b.buildOidcContainer(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if oidcContainer != nil {
+		b.AddContainer(oidcContainer)
+	}
+
 	return b.GetObject()
 }
 

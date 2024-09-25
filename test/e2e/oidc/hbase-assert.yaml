@@ -1,0 +1,35 @@
+
+---
+apiVersion: zookeeper.zncdata.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  name: hbase-znode
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hbase-znode
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hbase-master-default
+status:
+  availableReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hbase-regionserver-default
+status:
+  availableReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hbase-restserver-default
+status:
+  availableReplicas: 1
+  replicas: 1
