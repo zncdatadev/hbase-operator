@@ -8,10 +8,6 @@ spec:
   containers:
   - name: hbase-init-dir
     image: quay.io/zncdatadev/hadoop:3.3.4
-    resources:
-      limits:
-        memory: "128Mi"
-        cpu: "300m"
     env:
     - name: KRB5_CONFIG
       value: /kubedoop/kerberos/krb5.conf

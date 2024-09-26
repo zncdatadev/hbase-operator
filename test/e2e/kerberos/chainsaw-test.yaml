@@ -150,3 +150,20 @@ spec:
     cleanup:
     - sleep:
         duration: 10s
+    catch:
+      - sleep:
+          duration: 5s
+      - script:
+          env:
+            - name: NAMESPACE
+              value: ($namespace)
+          content: |
+            set -ex
+            kubectl -n $NAMESPACE get pods
+      - describe:
+          apiVersion: v1
+          kind: Pod
+          selector: app.kubernetes.io/managed-by=hbase-operator
+      - podLogs:
+          selector: app.kubernetes.io/managed-by=hbase-operator
+          tail: -1
