@@ -75,6 +75,7 @@ spec:
     - apply:
         file: hbase.yaml
     - assert:
+        timeout: 600s
         file: hbase-assert.yaml
     cleanup:
     - sleep:
@@ -92,7 +93,7 @@ spec:
       - describe:
           apiVersion: v1
           kind: Pod
-          selector: app.kubernetes.io/managed-by=hbase-operator
+          selector: app.kubernetes.io/instance=krb5-hbase
       - podLogs:
-          selector: app.kubernetes.io/managed-by=hbase-operator
+          selector: app.kubernetes.io/instance=krb5-hbase
           tail: -1
