@@ -42,15 +42,15 @@ func (r *Reconciler) GetImage() *util.Image {
 	image := &util.Image{
 		Repo:            hbasev1alpha1.DefaultRepository,
 		ProductName:     hbasev1alpha1.DefaultProductName,
-		PlatformVersion: hbasev1alpha1.DefaultPlatformVersion,
+		KubedoopVersion: hbasev1alpha1.DefaultKubedoopVersion,
 		ProductVersion:  hbasev1alpha1.DefaultProductVersion,
-		PullPolicy:      &[]corev1.PullPolicy{corev1.PullIfNotPresent}[0],
+		PullPolicy:      corev1.PullIfNotPresent,
 	}
 	if r.Spec.Image != nil {
 		image.Custom = r.Spec.Image.Custom
 		image.Repo = r.Spec.Image.Repository
 		image.ProductVersion = r.Spec.Image.ProductVersion
-		image.PlatformVersion = r.Spec.Image.PlatformVersion
+		image.KubedoopVersion = r.Spec.Image.KubedoopVersion
 		image.PullPolicy = r.Spec.Image.PullPolicy
 		image.PullSecretName = r.Spec.Image.PullSecretName
 	}
@@ -62,12 +62,13 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 
 	master := master.NewReconciler(
 		r.GetClient(),
+		r.IsStopped(),
+		r.ClusterConfig,
 		reconciler.RoleInfo{
 			ClusterInfo: r.ClusterInfo,
 			RoleName:    "master",
 		},
-		r.GetClusterOperation(),
-		r.ClusterConfig,
+
 		r.GetImage(),
 		r.Spec.MasterSpec,
 	)
@@ -78,12 +79,13 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 
 	region := regionserver.NewReconciler(
 		r.GetClient(),
+		r.IsStopped(),
+		r.ClusterConfig,
 		reconciler.RoleInfo{
 			ClusterInfo: r.ClusterInfo,
 			RoleName:    "regionserver",
 		},
-		r.GetClusterOperation(),
-		r.ClusterConfig,
+
 		r.GetImage(),
 		r.Spec.RegionServerSpec,
 	)
@@ -94,12 +96,13 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 
 	rest := restserver.NewReconciler(
 		r.GetClient(),
+		r.IsStopped(),
+		r.ClusterConfig,
 		reconciler.RoleInfo{
 			ClusterInfo: r.ClusterInfo,
 			RoleName:    "restserver",
 		},
-		r.GetClusterOperation(),
-		r.ClusterConfig,
+
 		r.GetImage(),
 		r.Spec.RestServerSpec,
 	)

@@ -31,6 +31,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.zncdata.dev
+  resources:
+  - authenticationclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - hbase.zncdata.dev
   resources:
   - hbaseclusters

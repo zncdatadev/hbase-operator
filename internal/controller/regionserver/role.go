@@ -2,10 +2,11 @@ package regionserver
 
 import (
 	"context"
+	"time"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/hbase-operator/internal/controller/common"
-	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
+	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
@@ -26,9 +27,10 @@ type Reconciler struct {
 
 func NewReconciler(
 	client *client.Client,
-	roleInfo reconciler.RoleInfo,
-	clusterOperation *commonsv1alpha1.ClusterOperationSpec,
+	clusterStopped bool,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
+	roleInfo reconciler.RoleInfo,
+
 	image *util.Image,
 	spec *hbasev1alph1.RegionServerSpec,
 ) *Reconciler {
@@ -36,8 +38,8 @@ func NewReconciler(
 	return &Reconciler{
 		BaseRoleReconciler: *reconciler.NewBaseRoleReconciler(
 			client,
+			clusterStopped,
 			roleInfo,
-			clusterOperation,
 			spec,
 		),
 		Image:         image,
@@ -69,23 +71,47 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 }
 
 func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info reconciler.RoleGroupInfo, roleGroupSpec any) ([]reconciler.Reconciler, error) {
-
+	spec := roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec)
 	var reconcilers []reconciler.Reconciler
 
-	stopped := false
-
-	if r.ClusterOperation != nil && r.ClusterOperation.Stopped {
-		stopped = true
+	options := builder.WorkloadOptions{
+		Options: builder.Options{
+			ClusterName:   info.GetClusterName(),
+			RoleName:      info.GetRoleName(),
+			RoleGroupName: info.GetGroupName(),
+			Labels:        info.GetLabels(),
+			Annotations:   info.GetAnnotations(),
+		},
+		PodOverrides:     spec.PodOverrides,
+		CommandOverrides: spec.CommandOverrides,
+		EnvOverrides:     spec.EnvOverrides,
 	}
 
-	statefulSetReconciler, err := NewStatefulSetReconciler(
+	if spec.Config != nil {
+		var gracefulShutdownTimeout time.Duration
+		var err error
+
+		if spec.Config.GracefulShutdownTimeout != nil {
+			gracefulShutdownTimeout, err = time.ParseDuration(*spec.Config.GracefulShutdownTimeout)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		options.TerminationGracePeriod = &gracefulShutdownTimeout
+		options.Resource = spec.Config.Resources
+		options.Affinity = spec.Config.Affinity
+	}
+
+	statefulSetReconciler, err := common.NewStatefulSetReconciler(
 		r.Client,
 		r.ClusterConfig,
 		info,
 		Ports,
 		r.Image,
-		stopped,
-		roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec),
+		r.ClusterStopped,
+		spec.Replicas,
+		options,
 	)
 
 	if err != nil {
@@ -94,10 +120,17 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 
 	reconcilers = append(reconcilers, statefulSetReconciler)
 
-	serviceReconciler := common.NewServiceReconciler(
-		r.GetClient(),
+	serviceReconciler := reconciler.NewServiceReconciler(
+		r.Client,
+		info.GetFullName(),
 		Ports,
-		info,
+		func(sbo *builder.ServiceBuilderOption) {
+			sbo.Labels = info.GetLabels()
+			sbo.Annotations = info.GetAnnotations()
+			sbo.ClusterName = r.ClusterInfo.ClusterName
+			sbo.RoleName = r.RoleInfo.RoleName
+			sbo.RoleGroupName = info.RoleGroupName
+		},
 	)
 
 	reconcilers = append(reconcilers, serviceReconciler)

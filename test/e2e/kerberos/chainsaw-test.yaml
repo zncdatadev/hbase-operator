@@ -146,7 +146,25 @@ spec:
     - apply:
         file: hbase.yaml
     - assert:
+        timeout: 600s
         file: hbase-assert.yaml
     cleanup:
     - sleep:
         duration: 10s
+    catch:
+      - sleep:
+          duration: 5s
+      - script:
+          env:
+            - name: NAMESPACE
+              value: ($namespace)
+          content: |
+            set -ex
+            kubectl -n $NAMESPACE get pods
+      - describe:
+          apiVersion: v1
+          kind: Pod
+          selector: app.kubernetes.io/instance=krb5-hbase
+      - podLogs:
+          selector: app.kubernetes.io/instance=krb5-hbase
+          tail: -1

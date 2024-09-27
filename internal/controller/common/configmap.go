@@ -3,16 +3,17 @@ package common
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
+	"github.com/zncdatadev/operator-go/pkg/config/xml"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
-	util "github.com/zncdatadev/operator-go/pkg/util"
+	"github.com/zncdatadev/operator-go/pkg/util"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	authz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
@@ -113,7 +114,7 @@ log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %-5p [%t] %c{2}: %.1
 
 log4j.appender.FILE=org.apache.log4j.RollingFileAppender
 log4j.appender.FILE.Threshold=INFO
-log4j.appender.FILE.File=/stackable/log/hbase/hbase.log4j.xml
+log4j.appender.FILE.File=` + path.Join(HBaseConfigDir, "hbase.log4j.xml") + `
 log4j.appender.FILE.MaxFileSize=5MB
 log4j.appender.FILE.MaxBackupIndex=1
 log4j.appender.FILE.layout=org.apache.log4j.xml.XMLLayout
@@ -127,7 +128,7 @@ log4j.appender.FILE.layout=org.apache.log4j.xml.XMLLayout
 func (b *ConfigMapBuilder) AddSSLClientXML() error {
 	if b.krb5Config != nil {
 		data := b.krb5Config.GetSSLClientSettings()
-		sslClientXML := util.NewXMLConfigurationFromMap(data)
+		sslClientXML := xml.NewXMLConfigurationFromMap(data)
 		sslClientXMLXML, err := sslClientXML.Marshal()
 		if err != nil {
 			return err
@@ -141,7 +142,7 @@ func (b *ConfigMapBuilder) AddSSLClientXML() error {
 func (b *ConfigMapBuilder) AddSSLServerXML() error {
 	if b.krb5Config != nil {
 		data := b.krb5Config.GetSSLServerSttings()
-		serverXML := util.NewXMLConfigurationFromMap(data)
+		serverXML := xml.NewXMLConfigurationFromMap(data)
 		serverXMLXML, err := serverXML.Marshal()
 		if err != nil {
 			return err
@@ -153,7 +154,7 @@ func (b *ConfigMapBuilder) AddSSLServerXML() error {
 }
 
 func (b *ConfigMapBuilder) AddHbaseSite(znode *ZnodeConfiguration) error {
-	hbaseSite := util.NewXMLConfiguration()
+	hbaseSite := xml.NewXMLConfiguration()
 	quorum, err := znode.GetQuorum()
 	if err != nil {
 		return err
@@ -199,15 +200,9 @@ type ConfigMapReconciler[T reconciler.AnySpec] struct {
 
 func (r *ConfigMapReconciler[T]) GetZKZnodeConfig(ctx context.Context) (*ZnodeConfiguration, error) {
 	name := r.ClusterConfig.ZookeeperConfigMapName
-	namespace := r.GetClient().GetOwnerNamespace()
-	obj := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	}
+	obj := &corev1.ConfigMap{}
 
-	if err := r.GetClient().Get(ctx, obj); err != nil {
+	if err := r.GetClient().GetWithOwnerNamespace(ctx, name, obj); err != nil {
 		return nil, err
 	}
 

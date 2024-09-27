@@ -8,15 +8,11 @@ spec:
   containers:
   - name: hbase-init-dir
     image: quay.io/zncdatadev/hadoop:3.3.4
-    resources:
-      limits:
-        memory: "128Mi"
-        cpu: "300m"
     env:
     - name: KRB5_CONFIG
-      value: /stackable/kerberos/krb5.conf
+      value: /kubedoop/kerberos/krb5.conf
     - name: HADOOP_CONF_DIR
-      value: /stackable/kerberos
+      value: /kubedoop/kerberos
     command: 
       - "bash"
       - "-c"
@@ -24,14 +20,14 @@ spec:
         set -ex
         tail -f /dev/null
         
-        PRINCIPAL=$(klist -kt /stackable/kerberos/keytab | awk 'NR>3 {print $4}' | head -n 1)
-        kinit -kt /stackable/kerberos/keytab $PRINCIPAL
+        PRINCIPAL=$(klist -kt /kubedoop/kerberos/keytab | awk 'NR>3 {print $4}' | head -n 1)
+        kinit -kt /kubedoop/kerberos/keytab $PRINCIPAL
 
         hdfs dfs -mkdir -p /hbase
         hdfs dfs -chown hbase /hbase
     volumeMounts:
     - name: keytab
-      mountPath: /stackable/kerberos
+      mountPath: /kubedoop/kerberos
     ports:
     - containerPort: 8080
       name: http

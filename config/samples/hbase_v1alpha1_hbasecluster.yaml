@@ -9,8 +9,6 @@ metadata:
     app.kubernetes.io/created-by: hbase-operator
   name: hbasecluster-sample
 spec:
-  image:
-    custom: docker.stackable.tech/stackable/hbase:2.4.17-stackable24.3.0
   clusterConfig:
     zookeeperConfigMapName: sample-hbase-znode
     hdfsConfigMapName: hdfscluster-sample

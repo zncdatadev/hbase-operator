@@ -6,8 +6,8 @@ import (
 
 const (
 	DefaultRepository      = "quay.io/zncdatadev"
-	DefaultProductVersion  = "2.4.17"
-	DefaultPlatformVersion = "0.0.0-dev"
+	DefaultProductVersion  = "2.4.18"
+	DefaultKubedoopVersion = "0.0.0-dev"
 	DefaultProductName     = "hbase"
 )
 
@@ -21,15 +21,15 @@ type ImageSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="0.0.0-dev"
-	PlatformVersion string `json:"platformVersion,omitempty"`
+	KubedoopVersion string `json:"kubedoopVersion,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default="2.4.17"
+	// +kubebuilder:default="2.4.18"
 	ProductVersion string `json:"productVersion,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=IfNotPresent
-	PullPolicy *corev1.PullPolicy `json:"pullPolicy,omitempty"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="hbase"

@@ -25,6 +25,10 @@ metadata:
   name: hbase
 spec:
   clusterConfig:
+    authentication:
+      authenticationClass: oidc
+      oidc:
+        clientCredentialsSecret: oidc-credentials
     zookeeperConfigMapName: hbase-znode
     hdfsConfigMapName: hdfs
   master:
