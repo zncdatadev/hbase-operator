@@ -168,3 +168,6 @@ spec:
       - podLogs:
           selector: app.kubernetes.io/instance=krb5-hbase
           tail: -1
+      - podLogs:
+          selector: app.kubenetes.io/name=secret-csi
+          tail: -1

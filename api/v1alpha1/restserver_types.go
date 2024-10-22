@@ -43,7 +43,7 @@ type RestServerConfigSpec struct {
 	GracefulShutdownTimeout *string `json:"gracefulShutdownTimeout,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Logging *commonsv1alpha1.LoggingConfigSpec `json:"logging,omitempty"`
+	Logging *LoggingSpec `json:"logging,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Resources *commonsv1alpha1.ResourcesSpec `json:"resources,omitempty"`

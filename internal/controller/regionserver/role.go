@@ -4,13 +4,15 @@ import (
 	"context"
 	"time"
 
-	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
-	"github.com/zncdatadev/hbase-operator/internal/controller/common"
+	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
+	"github.com/zncdatadev/hbase-operator/internal/controller/common"
 )
 
 var (
@@ -73,6 +75,11 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info reconciler.RoleGroupInfo, roleGroupSpec any) ([]reconciler.Reconciler, error) {
 	spec := roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec)
 	var reconcilers []reconciler.Reconciler
+	var loggingConfig *commonsv1alpha1.LoggingConfigSpec
+
+	if spec.Config != nil && spec.Config.Logging != nil {
+		loggingConfig = spec.Config.Logging.Containers[info.RoleName]
+	}
 
 	options := builder.WorkloadOptions{
 		Options: builder.Options{
@@ -138,6 +145,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 	configMapReconciler := common.NewConfigMapReconciler(
 		r.GetClient(),
 		r.ClusterConfig,
+		loggingConfig,
 		info,
 		roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec),
 	)

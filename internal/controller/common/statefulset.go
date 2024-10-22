@@ -29,6 +29,9 @@ var (
 	HDFSConfigDir       = path.Join(constants.KubedoopConfigDir)
 	HBaseMountConfigDir = path.Join(constants.KubedoopConfigDirMount, "hbase")
 	HDFSMountConfigDir  = path.Join(constants.KubedoopConfigDirMount, "hdfs")
+
+	HHbaseConfigVolumeName = "hbase-config"
+	HbaseLogVolumeName     = "log"
 )
 
 var _ builder.StatefulSetBuilder = &StatefulSetBuilder{}
@@ -343,7 +346,25 @@ func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, erro
 		b.AddContainer(oidcContainer)
 	}
 
-	return b.GetObject()
+	obj, err := b.GetObject()
+	if err != nil {
+		return nil, err
+	}
+
+	if b.ClusterConfig.VectorAggregatorConfigMapName != "" {
+		d := builder.NewVectorDecorator(
+			obj,
+			b.GetImage(),
+			HbaseLogVolumeName,
+			HHbaseConfigVolumeName,
+			b.ClusterConfig.VectorAggregatorConfigMapName,
+		)
+		if err := d.Decorate(); err != nil {
+			return nil, err
+		}
+	}
+
+	return obj, nil
 }
 
 var _ reconciler.Reconciler = &StatefulSetReconciler{}
