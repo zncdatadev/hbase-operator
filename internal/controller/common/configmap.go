@@ -3,15 +3,16 @@ package common
 import (
 	"context"
 	"fmt"
-	"path"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/config/xml"
+	"github.com/zncdatadev/operator-go/pkg/productlogging"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
 
@@ -35,6 +36,9 @@ var _ builder.ConfigBuilder = &ConfigMapBuilder{}
 type ConfigMapBuilder struct {
 	builder.ConfigMapBuilder
 
+	LoggingConfig       *commonsv1alpha1.LoggingConfigSpec
+	VectorConfigMapName string
+
 	ClusterName   string
 	RoleName      string
 	RolegroupName string
@@ -45,6 +49,8 @@ type ConfigMapBuilder struct {
 func NewConfigMapBuilder(
 	client *client.Client,
 	name string,
+	loggingConfig *commonsv1alpha1.LoggingConfigSpec,
+	vectorConfigMapName string,
 	krb5SecretClass string,
 	tlsSecretClass string,
 	options builder.Options,
@@ -69,10 +75,12 @@ func NewConfigMapBuilder(
 			options.Labels,
 			options.Annotations,
 		),
-		ClusterName:   options.ClusterName,
-		RoleName:      options.RoleName,
-		RolegroupName: options.RoleGroupName,
-		krb5Config:    krb5Config,
+		ClusterName:         options.ClusterName,
+		RoleName:            options.RoleName,
+		RolegroupName:       options.RoleGroupName,
+		krb5Config:          krb5Config,
+		LoggingConfig:       loggingConfig,
+		VectorConfigMapName: vectorConfigMapName,
 	}
 }
 
@@ -103,26 +111,17 @@ func (b *ConfigMapBuilder) getJVMOPTS() string {
 	return fmt.Sprintf(`export HBASE_%s_OPTS="$HBASE_OPTS %s"`, b.RoleName, strings.Join(opts, " "))
 }
 
-func (b *ConfigMapBuilder) AddLog4jProperties() error {
-	log4j := `
-log4j.rootLogger=INFO, CONSOLE, FILE
-
-log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-log4j.appender.CONSOLE.Threshold=INFO
-log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %-5p [%t] %c{2}: %.1000m%n
-
-log4j.appender.FILE=org.apache.log4j.RollingFileAppender
-log4j.appender.FILE.Threshold=INFO
-log4j.appender.FILE.File=` + path.Join(HBaseConfigDir, "hbase.log4j.xml") + `
-log4j.appender.FILE.MaxFileSize=5MB
-log4j.appender.FILE.MaxBackupIndex=1
-log4j.appender.FILE.layout=org.apache.log4j.xml.XMLLayout
-
-`
-	b.AddData(map[string]string{LogKey: util.IndentTab4Spaces(log4j)})
-	logger.V(15).Info("Log4j", "log4j", log4j, "clusterName", b.ClusterName, "roleName", b.RoleName, "roleGroupName", b.RolegroupName)
-	return nil
+func (b *ConfigMapBuilder) AddLog4jProperties() {
+	l := productlogging.NewLog4jConfigGenerator(
+		b.LoggingConfig,
+		b.RoleName,
+		"%d{ISO8601} %-5p [%t] %c{2}: %.1000m%n",
+		nil,
+		"hbase.log4j.xml",
+		"",
+	)
+	s := l.Generate()
+	b.AddItem(LogKey, s)
 }
 
 func (b *ConfigMapBuilder) AddSSLClientXML() error {
@@ -191,6 +190,27 @@ func (b *ConfigMapBuilder) AddHbaseSite(znode *ZnodeConfiguration) error {
 	return nil
 }
 
+func (b *ConfigMapBuilder) AddVectorConfig(ctx context.Context) error {
+	if b.VectorConfigMapName == "" {
+		return nil
+	}
+	s, err := productlogging.MakeVectorYaml(
+		ctx,
+		b.Client.Client,
+		b.Client.GetOwnerNamespace(),
+		b.ClusterName,
+		b.RoleName,
+		b.RolegroupName,
+		b.VectorConfigMapName,
+	)
+	if err != nil {
+		return err
+	}
+
+	b.AddItem(builder.VectorConfigFile, s)
+	return nil
+}
+
 var _ reconciler.ResourceReconciler[*ConfigMapBuilder] = &ConfigMapReconciler[reconciler.AnySpec]{}
 
 type ConfigMapReconciler[T reconciler.AnySpec] struct {
@@ -224,15 +244,17 @@ func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 
-	if err := builder.AddLog4jProperties(); err != nil {
-		return ctrl.Result{}, err
-	}
+	builder.AddLog4jProperties()
 
 	if err := builder.AddSSLClientXML(); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if err := builder.AddSSLServerXML(); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := builder.AddVectorConfig(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -248,6 +270,7 @@ func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) (ctrl.Result, er
 func NewConfigMapReconciler[T reconciler.AnySpec](
 	client *client.Client,
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
+	loggingConfig *commonsv1alpha1.LoggingConfigSpec,
 	options reconciler.RoleGroupInfo,
 	spec T,
 ) *ConfigMapReconciler[T] {
@@ -261,6 +284,8 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 	cmBuilder := NewConfigMapBuilder(
 		client,
 		options.GetFullName(),
+		loggingConfig,
+		clusterConfig.VectorAggregatorConfigMapName,
 		krb5SecretClass,
 		tlsSecretClass,
 		builder.Options{
