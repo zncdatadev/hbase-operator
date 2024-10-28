@@ -11,29 +11,10 @@ spec:
   - name: kadminKeytabSecret
     value: kadmin-keytab
   steps:
-  - try:
-    - apply:  # deploy operator
-        file: ../setup/olm.yaml
-    - assert:
-        file: ../setup/olm-assert.yaml
-  - try:
-    - apply:
-        file: ../setup/subs.yaml
-    - assert:
-        file: ../setup/subs-assert.yaml
-  - try:  # deploy listener and seret
-    - apply:
-        file: ../setup/listener.yaml
-    - assert:
-        file: ../setup/listener-assert.yaml
-    - apply:
-        file: ../setup/secret.yaml
-    - assert:
-        file: ../setup/secret-assert.yaml
   - try:  # deploy kerberos
     - apply:  # create a krb5 deployment and service, both named "krb5"
         file: ../setup/krb5.yaml
-    - assert: 
+    - assert:
         file: ../setup/krb5-assert.yaml
   - try:  # deploy krb5 SecretClass
     - script:
@@ -57,7 +38,7 @@ spec:
             echo "pod not found"
             exit 1
           fi
-          
+
           # get kadmin keytab
           KADMIN_KEYTAB=$(kubectl exec -n $NAMESPACE $POD_NAME -- sh -c "cat /var/kerberos/krb5kdc/kadmin.keytab | base64 -w 0")
 
