@@ -113,7 +113,7 @@ spec:
                 type: object
               master:
                 properties:
-                  commandOverrides:
+                  cliOverrides:
                     items:
                       type: string
                     type: array
@@ -1252,7 +1252,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandOverrides:
+                        cliOverrides:
                           items:
                             type: string
                           type: array
@@ -10567,7 +10567,7 @@ spec:
                 type: object
               regionServer:
                 properties:
-                  commandOverrides:
+                  cliOverrides:
                     items:
                       type: string
                     type: array
@@ -11706,7 +11706,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandOverrides:
+                        cliOverrides:
                           items:
                             type: string
                           type: array
@@ -21019,7 +21019,7 @@ spec:
                 type: object
               restServer:
                 properties:
-                  commandOverrides:
+                  cliOverrides:
                     items:
                       type: string
                     type: array
@@ -22158,7 +22158,7 @@ spec:
                   roleGroups:
                     additionalProperties:
                       properties:
-                        commandOverrides:
+                        cliOverrides:
                           items:
                             type: string
                           type: array
