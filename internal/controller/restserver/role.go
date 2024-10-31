@@ -89,7 +89,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 			Annotations:   info.GetAnnotations(),
 		},
 		PodOverrides:     spec.PodOverrides,
-		CommandOverrides: spec.CommandOverrides,
+		CommandOverrides: spec.CliOverrides,
 		EnvOverrides:     spec.EnvOverrides,
 	}
 

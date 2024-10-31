@@ -334,8 +334,8 @@ func (in *MasterRoleGroupSpec) DeepCopyInto(out *MasterRoleGroupSpec) {
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
@@ -388,8 +388,8 @@ func (in *MasterSpec) DeepCopyInto(out *MasterSpec) {
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
@@ -517,8 +517,8 @@ func (in *RegionServerRoleGroupSpec) DeepCopyInto(out *RegionServerRoleGroupSpec
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
@@ -571,8 +571,8 @@ func (in *RegionServerSpec) DeepCopyInto(out *RegionServerSpec) {
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
@@ -680,8 +680,8 @@ func (in *RestServerRoleGroupSpec) DeepCopyInto(out *RestServerRoleGroupSpec) {
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
@@ -734,8 +734,8 @@ func (in *RestServerSpec) DeepCopyInto(out *RestServerSpec) {
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
 		**out = **in
 	}
-	if in.CommandOverrides != nil {
-		in, out := &in.CommandOverrides, &out.CommandOverrides
+	if in.CliOverrides != nil {
+		in, out := &in.CliOverrides, &out.CliOverrides
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

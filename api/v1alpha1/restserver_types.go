@@ -16,7 +16,7 @@ type RestServerSpec struct {
 	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandOverrides []string `json:"commandOverrides,omitempty"`
+	CliOverrides []string `json:"cliOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *MasterConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -64,7 +64,7 @@ type RestServerRoleGroupSpec struct {
 	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandOverrides []string `json:"commandOverrides,omitempty"`
+	CliOverrides []string `json:"cliOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RestServerConfigOverrideSpec `json:"configOverrides,omitempty"`

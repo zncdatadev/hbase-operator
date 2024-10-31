@@ -15,7 +15,7 @@ type RegionServerSpec struct {
 	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandOverrides []string `json:"commandOverrides,omitempty"`
+	CliOverrides []string `json:"cliOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`
@@ -62,7 +62,7 @@ type RegionServerRoleGroupSpec struct {
 	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	CommandOverrides []string `json:"commandOverrides,omitempty"`
+	CliOverrides []string `json:"cliOverrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ConfigOverrides *RegionConfigOverrideSpec `json:"configOverrides,omitempty"`
