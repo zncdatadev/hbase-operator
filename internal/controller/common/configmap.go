@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
@@ -53,7 +54,7 @@ func NewConfigMapBuilder(
 	vectorConfigMapName string,
 	krb5SecretClass string,
 	tlsSecretClass string,
-	options builder.Options,
+	options builder.Option,
 ) *ConfigMapBuilder {
 	var krb5Config *authz.HbaseKerberosConfig
 	if krb5SecretClass != "" && tlsSecretClass != "" {
@@ -111,17 +112,27 @@ func (b *ConfigMapBuilder) getJVMOPTS() string {
 	return fmt.Sprintf(`export HBASE_%s_OPTS="$HBASE_OPTS %s"`, b.RoleName, strings.Join(opts, " "))
 }
 
-func (b *ConfigMapBuilder) AddLog4jProperties() {
-	l := productlogging.NewLog4jConfigGenerator(
+func (b *ConfigMapBuilder) AddLog4jProperties() error {
+	logGenerator, err := productlogging.NewConfigGenerator(
 		b.LoggingConfig,
 		b.RoleName,
-		"%d{ISO8601} %-5p [%t] %c{2}: %.1000m%n",
-		nil,
 		"hbase.log4j.xml",
-		"",
+		productlogging.LogTypeLog4j,
+		func(cgo *productlogging.ConfigGeneratorOption) {
+			cgo.ConsoleHandlerFormatter = ptr.To("%d{ISO8601} %-5p [%t] %c{2}: %.1000m%n")
+		},
 	)
-	s := l.Generate()
+	if err != nil {
+		return err
+	}
+
+	s, err := logGenerator.Content()
+	if err != nil {
+		return err
+	}
+
 	b.AddItem(LogKey, s)
+	return nil
 }
 
 func (b *ConfigMapBuilder) AddSSLClientXML() error {
@@ -244,7 +255,9 @@ func (r *ConfigMapReconciler[T]) Reconcile(ctx context.Context) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 
-	builder.AddLog4jProperties()
+	if err := builder.AddLog4jProperties(); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if err := builder.AddSSLClientXML(); err != nil {
 		return ctrl.Result{}, err
@@ -288,7 +301,7 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 		clusterConfig.VectorAggregatorConfigMapName,
 		krb5SecretClass,
 		tlsSecretClass,
-		builder.Options{
+		builder.Option{
 			ClusterName:   options.GetClusterName(),
 			RoleName:      options.GetRoleName(),
 			RoleGroupName: options.GetGroupName(),

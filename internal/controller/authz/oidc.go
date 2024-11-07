@@ -85,10 +85,9 @@ func (o *Oidc) getEnvVars() []corev1.EnvVar {
 		issuer.Host += ":" + strconv.Itoa(o.OidcProvider.Port)
 	}
 
-	provisioner := o.OidcProvider.Provisioner
-	// TODO: fix support keycloak-oidc
-	if provisioner == "keycloak" {
-		provisioner = "keycloak-oidc"
+	providerHint := o.OidcProvider.ProviderHint
+	if providerHint == "keycloak" {
+		providerHint = "keycloak-oidc"
 	}
 
 	clientCredentialsSecretName := o.Oidc.ClientCredentialsSecret
@@ -144,7 +143,7 @@ func (o *Oidc) getEnvVars() []corev1.EnvVar {
 		},
 		{
 			Name:  "OAUTH2_PROXY_PROVIDER",
-			Value: provisioner,
+			Value: providerHint,
 		},
 		{
 			Name:  "UPSTREAM",
