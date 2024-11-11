@@ -13,7 +13,7 @@ type MasterSpec struct {
 	RoleGroups map[string]MasterRoleGroupSpec `json:"roleGroups,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	RoleConfig *commonsv1alpha1.RoleConfigSpec `json:"roleConfig,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CliOverrides []string `json:"cliOverrides,omitempty"`
@@ -59,9 +59,6 @@ type MasterRoleGroupSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Config *MasterConfigSpec `json:"config,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CliOverrides []string `json:"cliOverrides,omitempty"`
