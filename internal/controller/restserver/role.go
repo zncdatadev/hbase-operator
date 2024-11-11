@@ -81,16 +81,16 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info recon
 	}
 
 	options := builder.WorkloadOptions{
-		Options: builder.Options{
+		Option: builder.Option{
 			ClusterName:   info.GetClusterName(),
 			RoleName:      info.GetRoleName(),
 			RoleGroupName: info.GetGroupName(),
 			Labels:        info.GetLabels(),
 			Annotations:   info.GetAnnotations(),
 		},
-		PodOverrides:     spec.PodOverrides,
-		CommandOverrides: spec.CliOverrides,
-		EnvOverrides:     spec.EnvOverrides,
+		PodOverrides: spec.PodOverrides,
+		CliOverrides: spec.CliOverrides,
+		EnvOverrides: spec.EnvOverrides,
 	}
 
 	if spec.Config != nil {
