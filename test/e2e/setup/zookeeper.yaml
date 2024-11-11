@@ -14,7 +14,7 @@ spec:
   server:
     roleGroups:
       default:
-        replicas: 3
+        replicas: 1
         config:
           logging:
             zookeeperCluster:
