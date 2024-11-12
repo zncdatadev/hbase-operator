@@ -1,0 +1,50 @@
+---
+apiVersion: zookeeper.zncdata.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  labels:
+    app.kubernetes.io/name: zookeeperznode
+    app.kubernetes.io/instance: hbase-znode
+    app.kubernetes.io/part-of: zookeeper-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: zookeeper-operator
+  name: hbase-znode
+spec:
+  clusterRef:
+    name: zk
+---
+apiVersion: hbase.zncdata.dev/v1alpha1
+kind: HbaseCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: hbasecluster
+    app.kubernetes.io/instance: hbase
+    app.kubernetes.io/part-of: hbase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: hbase-operator
+  name: hbase
+spec:
+  clusterConfig:
+    zookeeperConfigMapName: hbase-znode
+    hdfsConfigMapName: hdfs
+  master:
+    roleConfig:
+      podDisruptionBudget:
+        maxUnavailable: 2
+    roleGroups:
+      default:
+        replicas: 1
+  regionServer:
+    roleConfig:
+      podDisruptionBudget:
+        maxUnavailable: 2
+    roleGroups:
+      default:
+        replicas: 1
+  restServer:
+    roleConfig:
+      podDisruptionBudget:
+        maxUnavailable: 2
+    roleGroups:
+      default:
+        replicas: 1

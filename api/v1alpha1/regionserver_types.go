@@ -12,7 +12,8 @@ type RegionServerSpec struct {
 	// +kubebuilder:validation:Optional
 	RoleGroups map[string]RegionServerRoleGroupSpec `json:"roleGroups,omitempty"`
 
-	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	// +kubebuilder:validation:Optional
+	RoleConfig *commonsv1alpha1.RoleConfigSpec `json:"roleConfig,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CliOverrides []string `json:"cliOverrides,omitempty"`
@@ -57,9 +58,6 @@ type RegionServerRoleGroupSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Config *RegionConfigSpec `json:"config,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	PodDisruptionBudget *commonsv1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	CliOverrides []string `json:"cliOverrides,omitempty"`

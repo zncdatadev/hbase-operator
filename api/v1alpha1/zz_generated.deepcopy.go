@@ -287,7 +287,7 @@ func (in *MasterConfigSpec) DeepCopyInto(out *MasterConfigSpec) {
 	if in.PodDisruptionBudget != nil {
 		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.GracefulShutdownTimeout != nil {
 		in, out := &in.GracefulShutdownTimeout, &out.GracefulShutdownTimeout
@@ -328,11 +328,6 @@ func (in *MasterRoleGroupSpec) DeepCopyInto(out *MasterRoleGroupSpec) {
 		in, out := &in.Config, &out.Config
 		*out = new(MasterConfigSpec)
 		(*in).DeepCopyInto(*out)
-	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides
@@ -383,10 +378,10 @@ func (in *MasterSpec) DeepCopyInto(out *MasterSpec) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+	if in.RoleConfig != nil {
+		in, out := &in.RoleConfig, &out.RoleConfig
+		*out = new(commonsv1alpha1.RoleConfigSpec)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides
@@ -470,7 +465,7 @@ func (in *RegionConfigSpec) DeepCopyInto(out *RegionConfigSpec) {
 	if in.PodDisruptionBudget != nil {
 		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.GracefulShutdownTimeout != nil {
 		in, out := &in.GracefulShutdownTimeout, &out.GracefulShutdownTimeout
@@ -511,11 +506,6 @@ func (in *RegionServerRoleGroupSpec) DeepCopyInto(out *RegionServerRoleGroupSpec
 		in, out := &in.Config, &out.Config
 		*out = new(RegionConfigSpec)
 		(*in).DeepCopyInto(*out)
-	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides
@@ -566,10 +556,10 @@ func (in *RegionServerSpec) DeepCopyInto(out *RegionServerSpec) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+	if in.RoleConfig != nil {
+		in, out := &in.RoleConfig, &out.RoleConfig
+		*out = new(commonsv1alpha1.RoleConfigSpec)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides
@@ -633,7 +623,7 @@ func (in *RestServerConfigSpec) DeepCopyInto(out *RestServerConfigSpec) {
 	if in.PodDisruptionBudget != nil {
 		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
 		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.GracefulShutdownTimeout != nil {
 		in, out := &in.GracefulShutdownTimeout, &out.GracefulShutdownTimeout
@@ -674,11 +664,6 @@ func (in *RestServerRoleGroupSpec) DeepCopyInto(out *RestServerRoleGroupSpec) {
 		in, out := &in.Config, &out.Config
 		*out = new(RestServerConfigSpec)
 		(*in).DeepCopyInto(*out)
-	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides
@@ -729,10 +714,10 @@ func (in *RestServerSpec) DeepCopyInto(out *RestServerSpec) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.PodDisruptionBudget != nil {
-		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
-		*out = new(commonsv1alpha1.PodDisruptionBudgetSpec)
-		**out = **in
+	if in.RoleConfig != nil {
+		in, out := &in.RoleConfig, &out.RoleConfig
+		*out = new(commonsv1alpha1.RoleConfigSpec)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.CliOverrides != nil {
 		in, out := &in.CliOverrides, &out.CliOverrides

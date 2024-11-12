@@ -1,0 +1,20 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hbase-master
+spec:
+  maxUnavailable: 2
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hbase-regionserver
+spec:
+  maxUnavailable: 2
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hbase-restserver
+spec:
+  maxUnavailable: 2

@@ -3,17 +3,17 @@
 apiVersion: zookeeper.zncdata.dev/v1alpha1
 kind: ZookeeperZnode
 metadata:
-  name: krb5-hdfs-znode
+  name: hbase-znode
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: krb5-hdfs-znode
+  name: hbase-znode
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-journalnode
+  name: hbase-master-default
 status:
   availableReplicas: 1
   replicas: 1
@@ -21,15 +21,15 @@ status:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-namenode
+  name: hbase-regionserver-default
 status:
-  availableReplicas: 2
-  replicas: 2
+  availableReplicas: 1
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-datanode
+  name: hbase-restserver-default
 status:
   availableReplicas: 1
   replicas: 1
