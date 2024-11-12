@@ -31,5 +31,5 @@ kind: StatefulSet
 metadata:
   name: hdfs-default-datanode
 status:
-  availableReplicas: 2
-  replicas: 2
+  availableReplicas: 1
+  replicas: 1
