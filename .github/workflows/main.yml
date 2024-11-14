@@ -118,11 +118,3 @@ jobs:
     - name: Build and push operator
       run: |
         make docker-buildx
-    - name: Build and push operator bundle
-      run: |
-        make bundle
-        make bundle-buildx
-    - name: Build and push catalog
-      run: |
-        make catalog
-        make catalog-buildx

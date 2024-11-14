@@ -96,8 +96,8 @@ type HbaseClusterStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // HbaseCluster is the Schema for the hbaseclusters API
 type HbaseCluster struct {
@@ -108,7 +108,7 @@ type HbaseCluster struct {
 	Status HbaseClusterStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // HbaseClusterList contains a list of HbaseCluster
 type HbaseClusterList struct {

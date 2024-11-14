@@ -35,7 +35,7 @@ func (r *HbaseCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-hbase-zncdata-dev-v1alpha1-hbasecluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=create;update,versions=v1alpha1,name=mhbasecluster.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-hbase-zncdata-dev-v1alpha1-hbasecluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=create;update,versions=v1alpha1,name=mhbasecluster.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &HbaseCluster{}
 
@@ -47,7 +47,7 @@ func (r *HbaseCluster) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-hbase-zncdata-dev-v1alpha1-hbasecluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=create;update,versions=v1alpha1,name=vhbasecluster.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-hbase-zncdata-dev-v1alpha1-hbasecluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=create;update,versions=v1alpha1,name=vhbasecluster.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &HbaseCluster{}
 
