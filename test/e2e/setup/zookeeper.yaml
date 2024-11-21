@@ -15,13 +15,3 @@ spec:
     roleGroups:
       default:
         replicas: 1
-        config:
-          logging:
-            zookeeperCluster:
-              loggers:
-                test:
-                  level: DEBUG
-              console:
-                level: INFO
-              file:
-                level: INFO

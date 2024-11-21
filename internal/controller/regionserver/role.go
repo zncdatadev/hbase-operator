@@ -2,7 +2,6 @@ package regionserver
 
 import (
 	"context"
-	"time"
 
 	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
@@ -51,14 +50,24 @@ func NewReconciler(
 
 func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	for name, roleGroup := range r.Spec.RoleGroups {
-		mergedRoleGroup := r.MergeRoleGroupSpec(&roleGroup)
-
+		mergedConfig, err := util.MergeObject(r.Spec.Config, roleGroup.Config)
+		if err != nil {
+			return err
+		}
+		overrides, err := util.MergeObject(r.Spec.OverridesSpec, roleGroup.OverridesSpec)
+		if err != nil {
+			return err
+		}
 		info := reconciler.RoleGroupInfo{
 			RoleInfo:      r.RoleInfo,
 			RoleGroupName: name,
 		}
 
-		reconcilers, err := r.RegisterResourceWithRoleGroup(ctx, info, mergedRoleGroup)
+		var roleGroupConfig *commonsv1alpha1.RoleGroupConfigSpec
+		if mergedConfig != nil {
+			roleGroupConfig = mergedConfig.RoleGroupConfigSpec
+		}
+		reconcilers, err := r.RegisterResourceWithRoleGroup(ctx, roleGroup.Replicas, info, overrides, roleGroupConfig)
 		if err != nil {
 			return err
 		}
@@ -72,82 +81,54 @@ func (r *Reconciler) RegisterResources(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) RegisterResourceWithRoleGroup(_ context.Context, info reconciler.RoleGroupInfo, roleGroupSpec any) ([]reconciler.Reconciler, error) {
-	spec := roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec)
+func (r *Reconciler) RegisterResourceWithRoleGroup(
+	_ context.Context,
+	replicas *int32,
+	info reconciler.RoleGroupInfo,
+	overrides *commonsv1alpha1.OverridesSpec,
+	roleGroupConfig *commonsv1alpha1.RoleGroupConfigSpec,
+) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
-	var loggingConfig *commonsv1alpha1.LoggingConfigSpec
 
-	if spec.Config != nil && spec.Config.Logging != nil {
-		loggingConfig = spec.Config.Logging.Containers[info.RoleName]
-	}
-
-	options := builder.WorkloadOptions{
-		Option: builder.Option{
-			ClusterName:   info.GetClusterName(),
-			RoleName:      info.GetRoleName(),
-			RoleGroupName: info.GetGroupName(),
-			Labels:        info.GetLabels(),
-			Annotations:   info.GetAnnotations(),
-		},
-		PodOverrides: spec.PodOverrides,
-		CliOverrides: spec.CliOverrides,
-		EnvOverrides: spec.EnvOverrides,
-	}
-
-	if spec.Config != nil {
-		var gracefulShutdownTimeout time.Duration
-		var err error
-
-		if spec.Config.GracefulShutdownTimeout != nil {
-			gracefulShutdownTimeout, err = time.ParseDuration(*spec.Config.GracefulShutdownTimeout)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		options.TerminationGracePeriod = &gracefulShutdownTimeout
-		options.Resource = spec.Config.Resources
-		options.Affinity = spec.Config.Affinity
-	}
-
+	// statefulset
 	statefulSetReconciler, err := common.NewStatefulSetReconciler(
 		r.Client,
 		r.ClusterConfig,
 		info,
 		Ports,
 		r.Image,
-		r.ClusterStopped,
-		spec.Replicas,
-		options,
+		r.ClusterStopped(),
+		replicas,
+		overrides,
+		roleGroupConfig,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
 	reconcilers = append(reconcilers, statefulSetReconciler)
 
+	// service
 	serviceReconciler := reconciler.NewServiceReconciler(
 		r.Client,
 		info.GetFullName(),
 		Ports,
-		func(sbo *builder.ServiceBuilderOption) {
+		func(sbo *builder.ServiceBuilderOptions) {
 			sbo.Labels = info.GetLabels()
 			sbo.Annotations = info.GetAnnotations()
-			sbo.ClusterName = r.ClusterInfo.ClusterName
+			sbo.ClusterName = r.GetClusterName()
 			sbo.RoleName = r.RoleInfo.RoleName
 			sbo.RoleGroupName = info.RoleGroupName
 		},
 	)
-
 	reconcilers = append(reconcilers, serviceReconciler)
 
-	configMapReconciler := common.NewConfigMapReconciler(
+	// configmap
+	roleLoggingConfig := common.GetRoleLoggingConfig(roleGroupConfig, info.RoleName)
+	configMapReconciler := common.NewConfigMapReconciler[*hbasev1alph1.RegionServerRoleGroupSpec](
 		r.GetClient(),
 		r.ClusterConfig,
-		loggingConfig,
+		roleLoggingConfig,
 		info,
-		roleGroupSpec.(*hbasev1alph1.RegionServerRoleGroupSpec),
 	)
 	reconcilers = append(reconcilers, configMapReconciler)
 

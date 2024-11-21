@@ -54,31 +54,37 @@ func NewConfigMapBuilder(
 	vectorConfigMapName string,
 	krb5SecretClass string,
 	tlsSecretClass string,
-	options builder.Option,
+	options ...builder.Option,
 ) *ConfigMapBuilder {
 	var krb5Config *authz.HbaseKerberosConfig
+
+	buidlerOptions := &builder.Options{}
+	for _, o := range options {
+		o(buidlerOptions)
+	}
+
 	if krb5SecretClass != "" && tlsSecretClass != "" {
 		krb5Config = authz.NewHbaseKerberosConfig(
 			client.GetOwnerNamespace(),
-			options.ClusterName,
-			options.RoleName,
-			options.RoleGroupName,
+			buidlerOptions.ClusterName,
+			buidlerOptions.RoleName,
+			buidlerOptions.RoleGroupName,
 			krb5SecretClass,
 			tlsSecretClass,
 		)
-
 	}
-
 	return &ConfigMapBuilder{
 		ConfigMapBuilder: *builder.NewConfigMapBuilder(
 			client,
 			name,
-			options.Labels,
-			options.Annotations,
+			func(o *builder.Options) {
+				o.Labels = buidlerOptions.Labels
+				o.Annotations = buidlerOptions.Annotations
+			},
 		),
-		ClusterName:         options.ClusterName,
-		RoleName:            options.RoleName,
-		RolegroupName:       options.RoleGroupName,
+		ClusterName:         buidlerOptions.ClusterName,
+		RoleName:            buidlerOptions.RoleName,
+		RolegroupName:       buidlerOptions.RoleGroupName,
 		krb5Config:          krb5Config,
 		LoggingConfig:       loggingConfig,
 		VectorConfigMapName: vectorConfigMapName,
@@ -285,13 +291,13 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 	clusterConfig *hbasev1alph1.ClusterConfigSpec,
 	loggingConfig *commonsv1alpha1.LoggingConfigSpec,
 	options reconciler.RoleGroupInfo,
-	spec T,
 ) *ConfigMapReconciler[T] {
 	krb5SecretClass, tlsSecretClass := "", ""
 	if clusterConfig.Authentication != nil {
 		krb5SecretClass = clusterConfig.Authentication.KerberosSecretClass
 		tlsSecretClass = clusterConfig.Authentication.TlsSecretClass
-		logger.Info("Using authentication configuration", "kerberosSecretClass", krb5SecretClass, "tlsSecretClass", tlsSecretClass, "clusterName", options.GetClusterName(), "roleName", options.GetRoleName(), "roleGroupName", options.GetGroupName())
+		logger.Info("Using authentication configuration", "kerberosSecretClass", krb5SecretClass, "tlsSecretClass",
+			tlsSecretClass, "clusterName", options.GetClusterName(), "roleName", options.GetRoleName(), "roleGroupName", options.GetGroupName())
 	}
 
 	cmBuilder := NewConfigMapBuilder(
@@ -301,19 +307,18 @@ func NewConfigMapReconciler[T reconciler.AnySpec](
 		clusterConfig.VectorAggregatorConfigMapName,
 		krb5SecretClass,
 		tlsSecretClass,
-		builder.Option{
-			ClusterName:   options.GetClusterName(),
-			RoleName:      options.GetRoleName(),
-			RoleGroupName: options.GetGroupName(),
-			Labels:        options.GetLabels(),
-			Annotations:   options.GetAnnotations(),
+		func(o *builder.Options) {
+			o.ClusterName = options.GetClusterName()
+			o.RoleName = options.GetRoleName()
+			o.RoleGroupName = options.GetGroupName()
+			o.Labels = options.GetLabels()
+			o.Annotations = options.GetAnnotations()
 		},
 	)
 
 	return &ConfigMapReconciler[T]{
 		ResourceReconciler: reconciler.NewGenericResourceReconciler[*ConfigMapBuilder](
 			client,
-			options.GetFullName(),
 			cmBuilder,
 		),
 		ClusterConfig: clusterConfig,

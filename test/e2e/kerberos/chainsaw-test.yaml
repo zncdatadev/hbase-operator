@@ -5,9 +5,9 @@ metadata:
 spec:
   bindings:
   - name: relam
-    value: kubedoop.dev
+    value: KUBEDOOP.DEV   # kerberos relam, should be uppercase, see hdfs also
   - name: kadminPassword
-    value: zncdatadev
+    value: kubedoopdev
   - name: kadminKeytabSecret
     value: kadmin-keytab
   steps:
