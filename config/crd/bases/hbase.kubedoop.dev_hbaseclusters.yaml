@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.2
-  name: hbaseclusters.hbase.zncdata.dev
+  name: hbaseclusters.hbase.kubedoop.dev
 spec:
-  group: hbase.zncdata.dev
+  group: hbase.kubedoop.dev
   names:
     kind: HbaseCluster
     listKind: HbaseClusterList

@@ -167,13 +167,13 @@ func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
 					VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
 						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{
-								"secrets.zncdata.dev/class":                c.KerberosSecretClass,
-								"secrets.zncdata.dev/scope":                fmt.Sprintf("service=%s", c.ClusterName),
-								"secrets.zncdata.dev/kerberosServiceNames": "HTTP,hbase",
+								"secrets.kubedoop.dev/class":                c.KerberosSecretClass,
+								"secrets.kubedoop.dev/scope":                fmt.Sprintf("service=%s", c.ClusterName),
+								"secrets.kubedoop.dev/kerberosServiceNames": "HTTP,hbase",
 							},
 						},
 						Spec: corev1.PersistentVolumeClaimSpec{
-							StorageClassName: &[]string{"secrets.zncdata.dev"}[0],
+							StorageClassName: &[]string{"secrets.kubedoop.dev"}[0],
 							AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 							Resources: corev1.VolumeResourceRequirements{
 								Requests: corev1.ResourceList{
@@ -193,14 +193,14 @@ func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
 					VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
 						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{
-								"secrets.zncdata.dev/class":             c.TlsSecretClass,
-								"secrets.zncdata.dev/scope":             "node,pod",
-								"secrets.zncdata.dev/format":            "tls-p12",
-								"secrets.zncdata.dev/tlsPKCS12Password": TlsStorePassword,
+								"secrets.kubedoop.dev/class":             c.TlsSecretClass,
+								"secrets.kubedoop.dev/scope":             "node,pod",
+								"secrets.kubedoop.dev/format":            "tls-p12",
+								"secrets.kubedoop.dev/tlsPKCS12Password": TlsStorePassword,
 							},
 						},
 						Spec: corev1.PersistentVolumeClaimSpec{
-							StorageClassName: &[]string{"secrets.zncdata.dev"}[0],
+							StorageClassName: &[]string{"secrets.kubedoop.dev"}[0],
 							AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 							Resources: corev1.VolumeResourceRequirements{
 								Requests: corev1.ResourceList{

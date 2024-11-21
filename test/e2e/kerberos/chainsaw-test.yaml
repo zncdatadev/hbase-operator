@@ -5,7 +5,7 @@ metadata:
 spec:
   bindings:
   - name: relam
-    value: ZNCDATA.DEV
+    value: kubedoop.dev
   - name: kadminPassword
     value: zncdatadev
   - name: kadminKeytabSecret
@@ -61,7 +61,7 @@ spec:
             (keytab != ""): true
     - apply:
         resource:
-          apiVersion: secrets.zncdata.dev/v1alpha1
+          apiVersion: secrets.kubedoop.dev/v1alpha1
           kind: SecretClass
           metadata:
             name: kerberos
@@ -98,7 +98,7 @@ spec:
         - name: NAMESPACE
           value: ($namespace)
         - name: KRB5_HOME
-          value: /zncdata/kerberos
+          value: /kubedoop/kerberos
         content: |  # Note: The script has a large number of escape cases. hdfs access is limited to hdfs cluster resources, resulting in delays
           # debug node info
           kubectl get node

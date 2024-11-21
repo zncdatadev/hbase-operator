@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1alpha1 contains API Schema definitions for the hbase v1alpha1 API group
 // +kubebuilder:object:generate=true
-// +groupName=hbase.zncdata.dev
+// +groupName=hbase.kubedoop.dev
 package v1alpha1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "hbase.zncdata.dev", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "hbase.kubedoop.dev", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
