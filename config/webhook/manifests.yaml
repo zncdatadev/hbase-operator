@@ -10,12 +10,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-hbase-zncdata-dev-v1alpha1-hbasecluster
+      path: /mutate-hbase-kubedoop-dev-v1alpha1-hbasecluster
   failurePolicy: Fail
   name: mhbasecluster.kb.io
   rules:
   - apiGroups:
-    - hbase.zncdata.dev
+    - hbase.kubedoop.dev
     apiVersions:
     - v1alpha1
     operations:
@@ -36,12 +36,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-hbase-zncdata-dev-v1alpha1-hbasecluster
+      path: /validate-hbase-kubedoop-dev-v1alpha1-hbasecluster
   failurePolicy: Fail
   name: vhbasecluster.kb.io
   rules:
   - apiGroups:
-    - hbase.zncdata.dev
+    - hbase.kubedoop.dev
     apiVersions:
     - v1alpha1
     operations:

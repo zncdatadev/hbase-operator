@@ -1,6 +1,6 @@
 
 ---
-apiVersion: zookeeper.zncdata.dev/v1alpha1
+apiVersion: zookeeper.kubedoop.dev/v1alpha1
 kind: ZookeeperZnode
 metadata:
   name: krb5-hbase-znode

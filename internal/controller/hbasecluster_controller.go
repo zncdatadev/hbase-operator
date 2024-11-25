@@ -41,14 +41,14 @@ type HbaseClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=hbase.zncdata.dev,resources=hbaseclusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=hbase.kubedoop.dev,resources=hbaseclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=hbase.kubedoop.dev,resources=hbaseclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=hbase.kubedoop.dev,resources=hbaseclusters/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=authentication.zncdata.dev,resources=authenticationclasses,verbs=get;list;watch
+// +kubebuilder:rbac:groups=authentication.kubedoop.dev,resources=authenticationclasses,verbs=get;list;watch
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -68,7 +68,7 @@ func (r *HbaseClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	// Labels: map[string]string{
 	// 	"app.kubernetes.io/name":       "hbase",
-	// 	"app.kubernetes.io/managed-by": "hbase.zncdata.dev",
+	// 	"app.kubernetes.io/managed-by": "hbase.kubedoop.dev",
 	// 	"app.kubernetes.io/instance":   instance.Name,
 	// },
 	resourceClient := &client.Client{

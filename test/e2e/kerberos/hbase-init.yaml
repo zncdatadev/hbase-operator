@@ -13,13 +13,13 @@ spec:
       value: /kubedoop/kerberos/krb5.conf
     - name: HADOOP_CONF_DIR
       value: /kubedoop/kerberos
-    command: 
+    command:
       - "bash"
       - "-c"
       - |
         set -ex
         tail -f /dev/null
-        
+
         PRINCIPAL=$(klist -kt /kubedoop/kerberos/keytab | awk 'NR>3 {print $4}' | head -n 1)
         kinit -kt /kubedoop/kerberos/keytab $PRINCIPAL
 
@@ -37,12 +37,12 @@ spec:
       volumeClaimTemplate:
         metadata:
           annotations:
-            secrets.zncdata.dev/class: kerberos
-            secrets.zncdata.dev/scope: pod,service=hbase-init-dir
-            secrets.zncdata.dev/kerberosServiceNames: foo
+            secrets.kubedoop.dev/class: kerberos
+            secrets.kubedoop.dev/scope: pod,service=hbase-init-dir
+            secrets.kubedoop.dev/kerberosServiceNames: foo
         spec:
           accessModes: ["ReadWriteOnce"]
-          storageClassName: secrets.zncdata.dev
+          storageClassName: secrets.kubedoop.dev
           resources:
             requests:
               storage: 1Mi

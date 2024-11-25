@@ -1,5 +1,5 @@
 ---
-apiVersion: zookeeper.zncdata.dev/v1alpha1
+apiVersion: zookeeper.kubedoop.dev/v1alpha1
 kind: ZookeeperZnode
 metadata:
   labels:
@@ -11,9 +11,9 @@ metadata:
   name: krb5-hbase-znode
 spec:
   clusterRef:
-    name: zk 
+    name: zk
 ---
-apiVersion: hbase.zncdata.dev/v1alpha1
+apiVersion: hbase.kubedoop.dev/v1alpha1
 kind: HbaseCluster
 metadata:
   labels:

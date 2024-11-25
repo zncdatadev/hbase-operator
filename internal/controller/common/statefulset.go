@@ -17,6 +17,7 @@ import (
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/hbase-operator/internal/controller/authz"
 	auzhz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
+	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 )
 
 var (
@@ -55,30 +56,44 @@ func NewStatefulSetBuilder(
 	image *util.Image,
 	krb5SecretClass string,
 	tlsSecretClass string,
-	options builder.WorkloadOptions,
+	overrides *commonsv1alpha1.OverridesSpec,
+	roleGroupConfig *commonsv1alpha1.RoleGroupConfigSpec,
+	options ...builder.Option,
 ) *StatefulSetBuilder {
+
+	builderOpts := &builder.Options{}
+	for _, opt := range options {
+		opt(builderOpts)
+	}
 
 	var krb5Config *auzhz.HbaseKerberosConfig
 	if krb5SecretClass != "" && tlsSecretClass != "" {
 		krb5Config = auzhz.NewHbaseKerberosConfig(
 			client.GetOwnerNamespace(),
-			options.ClusterName,
-			options.RoleName,
-			options.RoleGroupName,
+			builderOpts.ClusterName,
+			builderOpts.RoleName,
+			builderOpts.RoleGroupName,
 			krb5SecretClass,
 			tlsSecretClass,
 		)
 	}
 
 	return &StatefulSetBuilder{
-		StatefulSet:   *builder.NewStatefulSetBuilder(client, name, replicas, image, options),
+		StatefulSet: *builder.NewStatefulSetBuilder(
+			client,
+			name,
+			replicas,
+			image,
+			overrides,
+			roleGroupConfig,
+			options...,
+		),
 		Ports:         ports,
 		ClusterConfig: clusterConfig,
-		RoleName:      options.RoleName,
-		ClusterName:   options.ClusterName,
+		RoleName:      builderOpts.RoleName,
+		ClusterName:   builderOpts.ClusterName,
 		krb5Config:    krb5Config,
 	}
-
 }
 
 func (b *StatefulSetBuilder) getVolumeMounts() []corev1.VolumeMount {
@@ -382,7 +397,8 @@ func NewStatefulSetReconciler(
 	image *util.Image,
 	stopped bool,
 	replicas *int32,
-	options builder.WorkloadOptions,
+	overrides *commonsv1alpha1.OverridesSpec,
+	roleGroupConfig *commonsv1alpha1.RoleGroupConfigSpec,
 ) (*reconciler.StatefulSet, error) {
 
 	krb5SecretClass, tlsSecretClass := "", ""
@@ -401,12 +417,19 @@ func NewStatefulSetReconciler(
 		image,
 		krb5SecretClass,
 		tlsSecretClass,
-		options,
+		overrides,
+		roleGroupConfig,
+		func(o *builder.Options) {
+			o.ClusterName = roleGroupInfo.GetClusterName()
+			o.RoleName = roleGroupInfo.GetRoleName()
+			o.RoleGroupName = roleGroupInfo.GetGroupName()
+			o.Labels = roleGroupInfo.GetLabels()
+			o.Annotations = roleGroupInfo.GetAnnotations()
+		},
 	)
 
 	return reconciler.NewStatefulSet(
 		client,
-		roleGroupInfo.GetFullName(),
 		stsBuilder,
 		stopped,
 	), nil
