@@ -3,7 +3,7 @@ module github.com/zncdatadev/hbase-operator
 go 1.23.2
 
 require (
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.35.1
 	github.com/zncdatadev/operator-go v0.11.3-0.20241120112858-dcdca6c6cd44
 	k8s.io/api v0.31.3
