@@ -26,3 +26,5 @@ Dockerfile.cross
 *~
 
 **/kind-kubeconfig*
+
+**/*local.*
