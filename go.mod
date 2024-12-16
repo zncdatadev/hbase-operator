@@ -1,14 +1,13 @@
 module github.com/zncdatadev/hbase-operator
 
 go 1.23.2
-
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/onsi/gomega v1.36.0
-	github.com/zncdatadev/operator-go v0.12.0
-	k8s.io/api v0.31.3
-	k8s.io/apimachinery v0.31.3
-	k8s.io/client-go v0.31.3
+	github.com/onsi/gomega v1.36.1
+	github.com/zncdatadev/operator-go v0.12.1
+	k8s.io/api v0.31.4
+	k8s.io/apimachinery v0.31.4
+	k8s.io/client-go v0.31.4
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.19.3
 )
