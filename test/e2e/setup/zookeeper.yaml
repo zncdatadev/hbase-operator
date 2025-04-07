@@ -11,7 +11,7 @@ metadata:
 spec:
   clusterConfig:
     listenerClass: external-unstable
-  server:
+  servers:
     roleGroups:
       default:
         replicas: 1
