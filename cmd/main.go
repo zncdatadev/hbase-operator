@@ -151,10 +151,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HbaseCluster")
 		os.Exit(1)
 	}
-	// if err = (&hbasev1alpha1.HbaseCluster{}).SetupWebhookWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "HbaseCluster")
-	//	os.Exit(1)
-	// }
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
