@@ -17,8 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
 	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -106,6 +110,26 @@ type HbaseCluster struct {
 
 	Spec   HbaseClusterSpec   `json:"spec,omitempty"`
 	Status HbaseClusterStatus `json:"status,omitempty"`
+}
+
+// ValidateCreate implements admission.CustomValidator.
+func (r *HbaseCluster) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+	panic("unimplemented")
+}
+
+// ValidateDelete implements admission.CustomValidator.
+func (r *HbaseCluster) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+	panic("unimplemented")
+}
+
+// ValidateUpdate implements admission.CustomValidator.
+func (r *HbaseCluster) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	panic("unimplemented")
+}
+
+// Default implements admission.CustomDefaulter.
+func (r *HbaseCluster) Default(ctx context.Context, obj runtime.Object) error {
+	panic("unimplemented")
 }
 
 // +kubebuilder:object:root=true

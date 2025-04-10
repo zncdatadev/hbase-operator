@@ -367,16 +367,13 @@ func (b *StatefulSetBuilder) Build(ctx context.Context) (ctrlclient.Object, erro
 	}
 
 	if b.ClusterConfig.VectorAggregatorConfigMapName != "" {
-		d := builder.NewVectorDecorator(
-			obj,
-			b.GetImage(),
-			HbaseLogVolumeName,
+		vectorFactory := builder.NewVector(
 			HHbaseConfigVolumeName,
-			b.ClusterConfig.VectorAggregatorConfigMapName,
+			HbaseLogVolumeName,
+			b.GetImage(),
 		)
-		if err := d.Decorate(); err != nil {
-			return nil, err
-		}
+		obj.Spec.Template.Spec.Containers = append(obj.Spec.Template.Spec.Containers, *vectorFactory.GetContainer())
+		obj.Spec.Template.Spec.Volumes = append(obj.Spec.Template.Spec.Volumes, vectorFactory.GetVolumes()...)
 	}
 
 	return obj, nil
