@@ -68,9 +68,9 @@ spec:
           spec:
             backend:
               kerberosKeytab:
-                realm: ($relam)
+                realmName: ($relam)
                 kdc: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
-                adminServer:
+                admin:
                   mit:
                     kadminServer: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
                 adminKeytabSecret:
