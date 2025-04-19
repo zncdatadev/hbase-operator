@@ -37,6 +37,30 @@ func (p *PodAffinity) Weight(weight int32) *PodAffinity {
 	return p
 }
 
+func (pa *PodAffinity) buildRequiredTerm() corev1.PodAffinityTerm {
+	return corev1.PodAffinityTerm{
+		LabelSelector: &metav1.LabelSelector{
+			MatchLabels: pa.labels,
+		},
+	}
+}
+
+func (pa *PodAffinity) buildPreferredTerm() corev1.WeightedPodAffinityTerm {
+	if pa.weight == 0 {
+		pa.weight = corev1.DefaultHardPodAffinitySymmetricWeight
+		affinityLogger.Info("Weight not set for preferred pod affinity, setting to %d", pa.weight)
+	}
+	return corev1.WeightedPodAffinityTerm{
+		Weight: pa.weight,
+		PodAffinityTerm: corev1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: pa.labels,
+			},
+			TopologyKey: corev1.LabelHostname,
+		},
+	}
+}
+
 type NodeAffinity struct {
 	weight int32
 }
@@ -48,7 +72,6 @@ func (n *NodeAffinity) Weight(weight int32) *NodeAffinity {
 
 type AffinityBuilder struct {
 	PodAffinity []PodAffinity
-	// NodePreferredAffinity []NodeAffinity
 }
 
 func NewAffinityBuilder(
@@ -70,37 +93,20 @@ func (a *AffinityBuilder) buildPodAffinity() (*corev1.PodAffinity, *corev1.PodAn
 
 	for _, pa := range a.PodAffinity {
 		if pa.affinityRequired {
-			// return required
-			term := corev1.PodAffinityTerm{
-				LabelSelector: &metav1.LabelSelector{
-					MatchLabels: pa.labels,
-				},
-			}
+			term := pa.buildRequiredTerm()
 			if pa.anti {
 				antiRequireTerms = append(antiRequireTerms, term)
 			} else {
 				requireTerms = append(requireTerms, term)
 			}
+			continue
+		}
+
+		weightTerm := pa.buildPreferredTerm()
+		if pa.anti {
+			antiPreferTerms = append(antiPreferTerms, weightTerm)
 		} else {
-			if pa.weight == 0 {
-				pa.weight = corev1.DefaultHardPodAffinitySymmetricWeight
-				affinityLogger.Info("Weight not set for preferred pod affinity, setting to %d", pa.weight)
-			}
-			// return preferred
-			weightTerm := corev1.WeightedPodAffinityTerm{
-				Weight: pa.weight,
-				PodAffinityTerm: corev1.PodAffinityTerm{
-					LabelSelector: &metav1.LabelSelector{
-						MatchLabels: pa.labels,
-					},
-					TopologyKey: corev1.LabelHostname,
-				},
-			}
-			if pa.anti {
-				antiPreferTerms = append(antiPreferTerms, weightTerm)
-			} else {
-				preferTerms = append(preferTerms, weightTerm)
-			}
+			preferTerms = append(preferTerms, weightTerm)
 		}
 	}
 
@@ -115,11 +121,9 @@ func (a *AffinityBuilder) buildPodAffinity() (*corev1.PodAffinity, *corev1.PodAn
 	}
 
 	return podAffinity, podAntiAffinity
-
 }
 
 func (a *AffinityBuilder) Build() *corev1.Affinity {
-
 	podAffinity, podAntiAffinity := a.buildPodAffinity()
 
 	return &corev1.Affinity{

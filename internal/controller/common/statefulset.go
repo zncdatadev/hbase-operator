@@ -15,8 +15,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
-	"github.com/zncdatadev/hbase-operator/internal/controller/authz"
-	auzhz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
+	authz "github.com/zncdatadev/hbase-operator/internal/controller/authz"
 	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 )
 
@@ -44,7 +43,7 @@ type StatefulSetBuilder struct {
 	RoleName      string
 	ClusterName   string
 
-	krb5Config *auzhz.HbaseKerberosConfig
+	krb5Config *authz.HbaseKerberosConfig
 }
 
 func NewStatefulSetBuilder(
@@ -66,9 +65,9 @@ func NewStatefulSetBuilder(
 		opt(builderOpts)
 	}
 
-	var krb5Config *auzhz.HbaseKerberosConfig
+	var krb5Config *authz.HbaseKerberosConfig
 	if krb5SecretClass != "" && tlsSecretClass != "" {
-		krb5Config = auzhz.NewHbaseKerberosConfig(
+		krb5Config = authz.NewHbaseKerberosConfig(
 			client.GetOwnerNamespace(),
 			builderOpts.ClusterName,
 			builderOpts.RoleName,

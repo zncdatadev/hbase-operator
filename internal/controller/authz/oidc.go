@@ -8,12 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	authv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/authentication/v1alpha1"
 	"github.com/zncdatadev/operator-go/pkg/builder"
 	"github.com/zncdatadev/operator-go/pkg/util"
 	corev1 "k8s.io/api/core/v1"
-
-	hbasev1alph1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 )
 
 var (
