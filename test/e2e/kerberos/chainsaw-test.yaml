@@ -68,9 +68,9 @@ spec:
           spec:
             backend:
               kerberosKeytab:
-                realm: ($relam)
+                realmName: ($relam)
                 kdc: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
-                adminServer:
+                admin:
                   mit:
                     kadminServer: (join('.', ['krb5', ($namespace), 'svc.cluster.local']))
                 adminKeytabSecret:
@@ -84,7 +84,7 @@ spec:
         file: ../setup/zookeeper-assert.yaml
     cleanup:
     - sleep:
-        duration: 30s
+        duration: 10s
   - try:  # deploy hdfs
     - apply:
         file: hdfs.yaml

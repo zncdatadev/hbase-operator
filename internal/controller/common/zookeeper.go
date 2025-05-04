@@ -10,7 +10,7 @@ import (
 
 const (
 	ZookeeperHostsKey      = "ZOOKEEPER_HOSTS"
-	ZookeeperClientPortKey = "ZOOKEEPER_CLIENT_PORT"
+	ZookeeperClientPortKey = "ZOOKEEPER_PORT"
 	ZookeeperChrootKey     = "ZOOKEEPER_CHROOT"
 	ZookeeperKey           = "zookeeper"
 )

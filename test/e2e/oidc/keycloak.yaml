@@ -26,6 +26,8 @@ spec:
           value: admin
         - name: KEYCLOAK_ADMIN_PASSWORD
           value: admin
+        - name: JAVA_TOOL_OPTIONS
+          value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=90.0 -XX:InitialRAMPercentage=90.0'
         ports:
         - containerPort: 8080
           name: http
