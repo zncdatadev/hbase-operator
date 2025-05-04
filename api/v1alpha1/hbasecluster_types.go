@@ -31,6 +31,7 @@ import (
 // HbaseClusterSpec defines the desired state of HbaseCluster
 type HbaseClusterSpec struct {
 	// +kubebuilder:validation:Optional
+	// +default:value={"repo": "quay.io/zncdatadev", "pullPolicy": "IfNotPresent"}
 	Image *ImageSpec `json:"image,omitempty"`
 
 	// +kubebuilder:validation:Required
