@@ -11,7 +11,7 @@ spec:
         file: ../setup/zookeeper-assert.yaml
     cleanup:
     - sleep:
-        duration: 30s
+        duration: 10s
   - try:
     - apply:
         file: ../setup/hdfs.yaml

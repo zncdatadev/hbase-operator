@@ -121,7 +121,6 @@ spec:
                     properties:
                       affinity:
                         type: object
-                        x-kubernetes-embedded-resource: true
                         x-kubernetes-preserve-unknown-fields: true
                       gracefulShutdownTimeout:
                         default: 30s
@@ -262,7 +261,6 @@ spec:
                     type: object
                   podOverrides:
                     type: object
-                    x-kubernetes-embedded-resource: true
                     x-kubernetes-preserve-unknown-fields: true
                   roleConfig:
                     properties:
@@ -299,7 +297,6 @@ spec:
                           properties:
                             affinity:
                               type: object
-                              x-kubernetes-embedded-resource: true
                               x-kubernetes-preserve-unknown-fields: true
                             gracefulShutdownTimeout:
                               default: 30s
@@ -440,7 +437,6 @@ spec:
                           type: object
                         podOverrides:
                           type: object
-                          x-kubernetes-embedded-resource: true
                           x-kubernetes-preserve-unknown-fields: true
                         replicas:
                           default: 1
@@ -461,7 +457,6 @@ spec:
                     properties:
                       affinity:
                         type: object
-                        x-kubernetes-embedded-resource: true
                         x-kubernetes-preserve-unknown-fields: true
                       gracefulShutdownTimeout:
                         default: 30s
@@ -602,7 +597,6 @@ spec:
                     type: object
                   podOverrides:
                     type: object
-                    x-kubernetes-embedded-resource: true
                     x-kubernetes-preserve-unknown-fields: true
                   roleConfig:
                     properties:
@@ -639,7 +633,6 @@ spec:
                           properties:
                             affinity:
                               type: object
-                              x-kubernetes-embedded-resource: true
                               x-kubernetes-preserve-unknown-fields: true
                             gracefulShutdownTimeout:
                               default: 30s
@@ -780,7 +773,6 @@ spec:
                           type: object
                         podOverrides:
                           type: object
-                          x-kubernetes-embedded-resource: true
                           x-kubernetes-preserve-unknown-fields: true
                         replicas:
                           default: 1
@@ -799,7 +791,6 @@ spec:
                     properties:
                       affinity:
                         type: object
-                        x-kubernetes-embedded-resource: true
                         x-kubernetes-preserve-unknown-fields: true
                       gracefulShutdownTimeout:
                         default: 30s
@@ -940,7 +931,6 @@ spec:
                     type: object
                   podOverrides:
                     type: object
-                    x-kubernetes-embedded-resource: true
                     x-kubernetes-preserve-unknown-fields: true
                   roleConfig:
                     properties:
@@ -977,7 +967,6 @@ spec:
                           properties:
                             affinity:
                               type: object
-                              x-kubernetes-embedded-resource: true
                               x-kubernetes-preserve-unknown-fields: true
                             gracefulShutdownTimeout:
                               default: 30s
@@ -1118,7 +1107,6 @@ spec:
                           type: object
                         podOverrides:
                           type: object
-                          x-kubernetes-embedded-resource: true
                           x-kubernetes-preserve-unknown-fields: true
                         replicas:
                           default: 1
