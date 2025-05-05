@@ -6,12 +6,12 @@ import (
 	"github.com/zncdatadev/operator-go/pkg/client"
 	"github.com/zncdatadev/operator-go/pkg/reconciler"
 	"github.com/zncdatadev/operator-go/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 
 	hbasev1alpha1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 	"github.com/zncdatadev/hbase-operator/internal/controller/master"
 	"github.com/zncdatadev/hbase-operator/internal/controller/regionserver"
 	"github.com/zncdatadev/hbase-operator/internal/controller/restserver"
+	"github.com/zncdatadev/hbase-operator/internal/util/version"
 )
 
 var _ reconciler.Reconciler = &Reconciler{}
@@ -39,20 +39,19 @@ func NewClusterReconciler(
 }
 
 func (r *Reconciler) GetImage() *util.Image {
-	image := &util.Image{
-		Repo:            hbasev1alpha1.DefaultRepository,
-		ProductName:     hbasev1alpha1.DefaultProductName,
-		KubedoopVersion: hbasev1alpha1.DefaultKubedoopVersion,
-		ProductVersion:  hbasev1alpha1.DefaultProductVersion,
-		PullPolicy:      corev1.PullIfNotPresent,
-	}
-	if r.Spec.Image != nil {
-		image.Custom = r.Spec.Image.Custom
-		image.Repo = r.Spec.Image.Repository
-		image.ProductVersion = r.Spec.Image.ProductVersion
+	image := util.NewImage(
+		hbasev1alpha1.DefaultProductName,
+		version.BuildVersion,
+		hbasev1alpha1.DefaultProductVersion,
+		func(options *util.ImageOptions) {
+			options.Custom = r.Spec.Image.Custom
+			options.Repo = r.Spec.Image.Repo
+			options.PullPolicy = r.Spec.Image.PullPolicy
+		},
+	)
+
+	if r.Spec.Image.KubedoopVersion != "" {
 		image.KubedoopVersion = r.Spec.Image.KubedoopVersion
-		image.PullPolicy = r.Spec.Image.PullPolicy
-		image.PullSecretName = r.Spec.Image.PullSecretName
 	}
 
 	return image
