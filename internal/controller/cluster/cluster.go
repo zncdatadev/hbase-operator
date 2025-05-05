@@ -11,7 +11,7 @@ import (
 	"github.com/zncdatadev/hbase-operator/internal/controller/master"
 	"github.com/zncdatadev/hbase-operator/internal/controller/regionserver"
 	"github.com/zncdatadev/hbase-operator/internal/controller/restserver"
-	"github.com/zncdatadev/hbase-operator/internal/controller/util/version"
+	"github.com/zncdatadev/hbase-operator/internal/util/version"
 )
 
 var _ reconciler.Reconciler = &Reconciler{}
