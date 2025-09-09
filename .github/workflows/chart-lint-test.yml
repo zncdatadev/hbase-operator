@@ -111,6 +111,8 @@ jobs:
             commons-operator
             listener-operator
             secret-operator
+            zookeeper-operator
+            hdfs-operator
           )
 
           # Install dependencies
