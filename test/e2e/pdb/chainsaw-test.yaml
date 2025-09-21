@@ -27,6 +27,15 @@ spec:
         file: hbase-assert.yaml
     - assert:
         file: pdb-assert.yaml
+    catch:
+    - describe:
+        apiVersion: v1
+        kind: Pod
+        namespace: ($namespace)
+    - get:
+        apiVersion: v1
+        kind: Pod
+        namespace: "*"
     cleanup:
     - sleep:
         duration: 5s
