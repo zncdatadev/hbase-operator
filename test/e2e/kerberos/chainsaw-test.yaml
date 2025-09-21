@@ -103,7 +103,7 @@ spec:
           # debug node info
           kubectl get node
 
-          kubectl exec -n $NAMESPACE krb5-hdfs-default-namenode-0 -c namenode -- sh -c '
+          kubectl exec -n $NAMESPACE krb5-hdfs-namenode-default-0 -c namenode -- sh -c '
             set -ex
             klist -kt /kubedoop/kerberos/keytab | awk "NR>3 {print \$4}" | head -n 1
             echo "init krb5"
