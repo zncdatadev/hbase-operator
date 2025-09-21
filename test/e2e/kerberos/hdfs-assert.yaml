@@ -13,7 +13,7 @@ metadata:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-journalnode
+  name: krb5-hdfs-journalnode-default
 status:
   availableReplicas: 1
   replicas: 1
@@ -21,7 +21,7 @@ status:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-namenode
+  name: krb5-hdfs-namenode-default
 status:
   availableReplicas: 2
   replicas: 2
@@ -29,7 +29,7 @@ status:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: krb5-hdfs-default-datanode
+  name: krb5-hdfs-datanode-default
 status:
   availableReplicas: 1
   replicas: 1
