@@ -27,6 +27,18 @@ spec:
         file: hbase-assert.yaml
     - assert:
         file: pdb-assert.yaml
+    catch:
+    - get:
+        apiVersion: v1
+        kind: StatefulSet
+    - get:
+        apiVersion: v1
+        kind: Pod
+        namespace: '*'
+    - describe:
+        apiVersion: v1
+        kind: Pod
+        namespace: '*'
     cleanup:
     - sleep:
         duration: 5s

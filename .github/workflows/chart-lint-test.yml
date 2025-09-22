@@ -111,11 +111,13 @@ jobs:
             commons-operator
             listener-operator
             secret-operator
+            zookeeper-operator
+            hdfs-operator
           )
 
           # Install dependencies
           for dep in "${HELM_DEPENDENCIES[@]}"; do
-            helm upgrade --install --create-namespace --namespace kubedoop-operators --wait $dep kubedoop/$dep
+            helm upgrade --install --create-namespace --namespace kubedoop-operators --wait $dep kubedoop/$dep --version ${{ env.VERSION }}
           done
 
           # Install hbase-operator chart
