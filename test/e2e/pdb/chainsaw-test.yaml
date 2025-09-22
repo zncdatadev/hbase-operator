@@ -30,6 +30,9 @@ spec:
     catch:
     - get:
         apiVersion: v1
+        kind: StatefulSet
+    - get:
+        apiVersion: v1
         kind: Pod
         namespace: '*'
     - describe:
