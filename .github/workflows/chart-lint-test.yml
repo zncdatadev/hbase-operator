@@ -125,4 +125,4 @@ jobs:
 
           # E2E tests
           make chainsaw
-          ./bin/chainsaw test --test-dir ./test/e2e/pdb
+          ./bin/chainsaw test --test-dir ./test/e2e/
