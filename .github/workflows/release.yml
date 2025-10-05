@@ -143,6 +143,7 @@ jobs:
       - name: Sign operator image
         uses: ./.github/actions/sign-image
 
+
   chart-linter-artifacthub:
     runs-on: ubuntu-latest
     container:
@@ -155,19 +156,14 @@ jobs:
         working-directory: deploy/helm
         run: ah lint
 
+
   chart-lint-test:
     runs-on: ubuntu-latest
-    container:
-      image: public.ecr.aws/artifacthub/ah:v1.14.0
-      options: --user 1001
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Run ah lint
-        working-directory: ./charts
-        run: ah lint
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.0
@@ -176,6 +172,10 @@ jobs:
         with:
           python-version: '3.x'
           check-latest: true
+
+      - name: Setup Chart Linting
+        id: lint
+        uses: helm/chart-testing-action@v2.7.0
 
       - name: Fetch all tags
         run: git fetch --tags --force
@@ -264,7 +264,7 @@ jobs:
         if: steps.check-changes.outputs.changed == 'true'
         run: |
           make docker-build
-          kind load docker-image quay.io/zncdatadev/hbase-operator:${{ env.VERSION }}
+          kind load docker-image quay.io/zncdatadev/hbase-operator:$VERSION
 
       - name: Run chart-testing (install)
         id: ct-test
@@ -282,9 +282,6 @@ jobs:
       - name: Run e2e with chart
         if: steps.ct-test.outputs.ct_tested == 'true'
         run: |
-          # Add kubedoop helm repo
-          helm repo add kubedoop https://zncdatadev.github.io/kubedoop-helm-charts/
-
           HELM_DEPENDENCIES=(
             commons-operator
             listener-operator
@@ -295,7 +292,7 @@ jobs:
 
           # Install dependencies
           for dep in "${HELM_DEPENDENCIES[@]}"; do
-            helm upgrade --install --create-namespace --namespace kubedoop-operators --wait  $dep oci://quay.io/kubedoopcharts/$dep --version $VERSION
+            helm upgrade --install --create-namespace --namespace kubedoop-operators --wait $dep oci://quay.io/kubedoopcharts/$dep --version $VERSION
           done
 
           # Install hbase-operator chart
@@ -304,7 +301,6 @@ jobs:
           # E2E tests
           make chainsaw
           ./bin/chainsaw test --test-dir ./test/e2e/
-
 
 
   release-chart:
