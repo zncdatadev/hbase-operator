@@ -131,5 +131,11 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(
 	)
 	reconcilers = append(reconcilers, configMapReconciler)
 
+	metricsServiceReconciler := common.NewRoleGroupMetricsService(
+		r.Client,
+		&info,
+	)
+	reconcilers = append(reconcilers, metricsServiceReconciler)
+
 	return reconcilers, nil
 }
