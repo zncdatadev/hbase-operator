@@ -14,10 +14,5 @@ var (
 			ContainerPort: 16010,
 			Protocol:      corev1.ProtocolTCP,
 		},
-		{
-			Name:          "metrics",
-			ContainerPort: 9100,
-			Protocol:      corev1.ProtocolTCP,
-		},
 	}
 )
