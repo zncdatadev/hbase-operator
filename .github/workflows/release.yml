@@ -87,20 +87,20 @@ jobs:
       - name: Create KinD cluster
         env:
           KIND_K8S_VERSION: ${{ matrix.k8s-version}}
-          KUBECONFIG: kind-kubeconfig-${{ matrix.k8s-version }}
-        run: make kind-create
+          CHAINSAW_KUBECONFIG: .kubeconfig-${{ matrix.k8s-version }}
+        run: make setup-chainsaw-cluster
 
-      - name: Chainsaw test setup
+      - name: Setup Chainsaw
         env:
           KIND_K8S_VERSION: ${{ matrix.k8s-version }}
-          KUBECONFIG: kind-kubeconfig-${{ matrix.k8s-version }}
-        run: make chainsaw-setup
+          CHAINSAW_KUBECONFIG: .kubeconfig-${{ matrix.k8s-version }}
+        run: make setup-chainsaw-e2e
 
-      - name: Test with Chainsaw
+      - name: Run chainsaw-e2e
         env:
           KIND_K8S_VERSION: ${{ matrix.k8s-version }}
-          KUBECONFIG: kind-kubeconfig-${{ matrix.k8s-version }}
-        run: make chainsaw-test
+          CHAINSAW_KUBECONFIG: .kubeconfig-${{ matrix.k8s-version }}
+        run: make chainsaw-e2e
 
 
   release-image:
@@ -142,6 +142,29 @@ jobs:
 
       - name: Sign operator image
         uses: ./.github/actions/sign-image
+
+
+  check-crds-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check CRDs sync
+        run: |
+          # Use `make manifests` to generate the CRDs
+          make manifests
+          # Check if the CRDs are in sync with the manifests
+          if ! git diff --exit-code; then
+            echo "CRDs are not in sync with the manifests."
+            echo "Please run 'make manifests' to update the CRDs."
+            exit 1
+          fi
 
 
   chart-linter-artifacthub:
