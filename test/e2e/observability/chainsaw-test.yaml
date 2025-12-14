@@ -1,0 +1,239 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: smoke-observability
+spec:
+  steps:
+  # 1. Install ZooKeeper
+  - name: install zookeeper
+    try:
+      - apply:
+          file: ../setup/zookeeper.yaml
+      - assert:
+          file: ../setup/zookeeper-assert.yaml
+    cleanup:
+      - sleep:
+          duration: 10s
+
+  # 2. Install HDFS
+  - name: install hdfs
+    try:
+      - apply:
+          file: ../setup/hdfs.yaml
+      - assert:
+          file: ../setup/hdfs-assert.yaml
+    cleanup:
+      - sleep:
+          duration: 5s
+
+  # 3. Install HBase cluster
+  - name: install hbase
+    try:
+      - apply:
+          file: hbase.yaml
+      - assert:
+          file: hbase-assert.yaml
+      - assert:
+          timeout: 300s
+          resource:
+            kind: StatefulSet
+            apiVersion: apps/v1
+            metadata:
+              name: test-hbase-observability-master-default
+              namespace: ($namespace)
+            status:
+              readyReplicas: 1
+      - assert:
+          timeout: 300s
+          resource:
+            kind: StatefulSet
+            apiVersion: apps/v1
+            metadata:
+              name: test-hbase-observability-regionserver-default
+              namespace: ($namespace)
+            status:
+              readyReplicas: 1
+      - assert:
+          timeout: 300s
+          resource:
+            kind: StatefulSet
+            apiVersion: apps/v1
+            metadata:
+              name: test-hbase-observability-restserver-default
+              namespace: ($namespace)
+            status:
+              readyReplicas: 1
+
+  # 4. Verify metrics port connectivity and format for all HBase roles
+  - name: verify metrics connectivity
+    try:
+      - script:
+          bindings:
+          - name: NAMESPACE
+            value: ($namespace)
+          content: |
+            #!/bin/bash
+            set -ex
+
+            echo "Namespace: $NAMESPACE"
+
+            # Test function for each role
+            test_role_metrics() {
+              local ROLE=$1
+              local PORT=$2
+              local ENDPOINT=$3
+
+              echo "=== Testing $ROLE role (port $PORT, endpoint $ENDPOINT) ==="
+
+              PODS=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/component=$ROLE,app.kubernetes.io/instance=test-hbase-observability -o jsonpath='{.items[*].metadata.name}')
+              echo "Found $ROLE pods: $PODS"
+
+              for POD in $PODS; do
+                echo "Testing Pod: $POD"
+
+                # Port-forward to pod
+                kubectl port-forward -n "$NAMESPACE" "$POD" $PORT:$PORT > /dev/null 2>&1 &
+                PF_PID=$!
+                sleep 3
+
+                trap "kill $PF_PID 2>/dev/null || true" EXIT
+
+                # Test metrics endpoint accessibility
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT$ENDPOINT)
+                if [[ "$HTTP_CODE" != "200" ]]; then
+                  echo "ERROR: Failed to access metrics endpoint, HTTP code: $HTTP_CODE"
+                  kill $PF_PID 2>/dev/null || true
+                  exit 1
+                fi
+
+                # Fetch metrics
+                METRICS=$(curl -s http://localhost:$PORT$ENDPOINT)
+
+                # Verify Prometheus format
+                if ! echo "$METRICS" | grep -q "# TYPE"; then
+                  echo "ERROR: Missing Prometheus format (# TYPE)"
+                  kill $PF_PID 2>/dev/null || true
+                  exit 1
+                fi
+
+                # Verify JVM metrics present
+                if ! echo "$METRICS" | grep -q "jvm_"; then
+                  echo "ERROR: Missing JVM metrics"
+                  kill $PF_PID 2>/dev/null || true
+                  exit 1
+                fi
+
+                # Verify HBase-specific metrics
+                if ! echo "$METRICS" | grep -q "Hadoop_"; then
+                  echo "WARNING: Expected HBase metric pattern 'Hadoop_' not found"
+                fi
+
+                echo "✓ Pod $POD metrics OK"
+
+                # Cleanup
+                kill $PF_PID 2>/dev/null || true
+                sleep 1
+              done
+            }
+
+            # Test all three roles
+            test_role_metrics "master" "16010" "/prom"
+            test_role_metrics "regionserver" "16030" "/prom"
+            test_role_metrics "restserver" "8085" "/prom"
+
+            echo "✓ All HBase roles metrics verified"
+
+  # 5. Install Prometheus
+  - name: install prometheus
+    try:
+      - script:
+          bindings:
+            - name: NAMESPACE
+              value: ($namespace)
+          content: |
+            #!/bin/bash
+            set -ex
+
+            echo "=== Environment Check ==="
+            echo "NAMESPACE variable: '$NAMESPACE'"
+            echo "NAMESPACE length: ${#NAMESPACE}"
+            if [ -z "$NAMESPACE" ]; then
+              echo "ERROR: NAMESPACE is empty!"
+              exit 1
+            fi
+
+            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
+            helm repo update
+
+            echo "=== Installing Prometheus ==="
+            echo "Will install to namespace: $NAMESPACE"
+
+            helm upgrade --install prometheus prometheus-community/prometheus \
+              --version 25.3.1 \
+              --namespace "$NAMESPACE" \
+              --create-namespace \
+              -f prometheus-values.yaml \
+              --wait --timeout 5m
+
+  # 6. Verify Prometheus targets
+  - name: verify prometheus targets
+    try:
+      - script:
+          bindings:
+            - name: NAMESPACE
+              value: ($namespace)
+          content: |
+            #!/bin/bash
+            set -e
+
+            # Wait for Prometheus server pod
+            kubectl wait --for=condition=Ready pod -l app=prometheus,component=server -n "$NAMESPACE" --timeout=300s 2>/dev/null || true
+            sleep 3
+
+            # Port-forward
+            kubectl port-forward -n "$NAMESPACE" svc/prometheus-server 9090:80 > /dev/null 2>&1 &
+            PF_PID=$!
+            sleep 2
+
+            trap "kill $PF_PID 2>/dev/null || true" EXIT
+
+            # Check targets
+            TARGETS=$(curl -s http://localhost:9090/api/v1/targets)
+
+            echo "=== Checking Prometheus Targets ==="
+
+            # Check if we have any active targets
+            ACTIVE=$(echo "$TARGETS" | grep -o '"state":"up"' | wc -l)
+            echo "Total active targets: $ACTIVE"
+
+            if [ "$ACTIVE" -eq 0 ]; then
+              echo "WARNING: No active targets found"
+            fi
+
+            # Check for HBase targets (all three roles)
+            echo "Looking for HBase targets..."
+
+            ROLES=("master" "regionserver" "restserver")
+            for ROLE in "${ROLES[@]}"; do
+              echo "Checking $ROLE targets..."
+
+              if echo "$TARGETS" | grep -q "test-hbase-observability-$ROLE"; then
+                echo "✓ Found HBase $ROLE target"
+
+                # Verify target is UP
+                if echo "$TARGETS" | grep "test-hbase-observability-$ROLE" | grep -q '"health":"up"'; then
+                  echo "✓ HBase $ROLE target is UP"
+                else
+                  echo "WARNING: HBase $ROLE target found but not UP"
+                  echo "$TARGETS" | grep "test-hbase-observability-$ROLE" | head -20
+                fi
+              else
+                echo "ERROR: HBase $ROLE target not found in Prometheus"
+                echo "Available targets:"
+                echo "$TARGETS" | grep -o '"job":"[^"]*"' | sort | uniq
+                exit 1
+              fi
+            done
+
+            echo "✓ All HBase roles found in Prometheus targets"
+            echo "✓ Prometheus targets verification complete"
