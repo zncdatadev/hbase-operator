@@ -109,23 +109,23 @@ spec:
                 # Fetch metrics
                 METRICS=$(curl -s http://localhost:$PORT$ENDPOINT)
 
-                # Verify Prometheus format
-                if ! echo "$METRICS" | grep -q "# TYPE"; then
-                  echo "ERROR: Missing Prometheus format (# TYPE)"
+                # Verify JMX JSON format (HBase 2.4.x returns JSON, not Prometheus format)
+                if ! echo "$METRICS" | grep -q '"beans"'; then
+                  echo "ERROR: Missing JMX JSON format (beans)"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
                 # Verify JVM metrics present
-                if ! echo "$METRICS" | grep -q "jvm_"; then
+                if ! echo "$METRICS" | grep -q "JvmMetrics"; then
                   echo "ERROR: Missing JVM metrics"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
                 # Verify HBase-specific metrics
-                if ! echo "$METRICS" | grep -q "Hadoop_"; then
-                  echo "WARNING: Expected HBase metric pattern 'Hadoop_' not found"
+                if ! echo "$METRICS" | grep -q "Hadoop:service=HBase"; then
+                  echo "WARNING: Expected HBase metric pattern 'Hadoop:service=HBase' not found"
                 fi
 
                 echo "✓ Pod $POD metrics OK"
@@ -137,9 +137,10 @@ spec:
             }
 
             # Test all three roles
-            test_role_metrics "master" "16010" "/prom"
-            test_role_metrics "regionserver" "16030" "/prom"
-            test_role_metrics "restserver" "8085" "/prom"
+            # Note: HBase 2.4.x only provides /jmx endpoint (not /prometheus)
+            test_role_metrics "master" "16010" "/jmx"
+            test_role_metrics "regionserver" "16030" "/jmx"
+            test_role_metrics "restserver" "8085" "/jmx"
 
             echo "✓ All HBase roles metrics verified"
 
@@ -213,8 +214,8 @@ spec:
             # Check for HBase targets (all three roles)
             echo "Looking for HBase targets..."
 
-            ROLES=("master" "regionserver" "restserver")
-            for ROLE in "${ROLES[@]}"; do
+            # Check each role separately (avoid bash array for sh compatibility)
+            for ROLE in master regionserver restserver; do
               echo "Checking $ROLE targets..."
 
               if echo "$TARGETS" | grep -q "test-hbase-observability-$ROLE"; then
