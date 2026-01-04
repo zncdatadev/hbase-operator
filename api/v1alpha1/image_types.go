@@ -6,7 +6,7 @@ import (
 
 const (
 	DefaultRepository     = "quay.io/zncdatadev"
-	DefaultProductVersion = "2.4.18"
+	DefaultProductVersion = "2.6.1"
 	DefaultProductName    = "hbase"
 )
 
