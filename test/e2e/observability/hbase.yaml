@@ -12,8 +12,6 @@ kind: HbaseCluster
 metadata:
   name: test-hbase-observability
 spec:
-  image:
-    productVersion: ($values.product_version)
   clusterConfig:
     zookeeperConfigMapName: hbase-observability-znode
     hdfsConfigMapName: hdfs

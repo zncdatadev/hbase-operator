@@ -1,5 +1,5 @@
 # Master metrics service
-# Note: HBase 2.4.x uses /jmx endpoint (JSON format), not /prometheus
+# Note: HBase 2.6.1+ uses native /prometheus endpoint (Prometheus text format)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,7 +9,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "16010"
-    prometheus.io/path: "/jmx"
+    prometheus.io/path: "/prometheus"
     prometheus.io/scheme: "http"
 spec:
   clusterIP: None
@@ -32,7 +32,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "16030"
-    prometheus.io/path: "/jmx"
+    prometheus.io/path: "/prometheus"
     prometheus.io/scheme: "http"
 spec:
   clusterIP: None
@@ -55,7 +55,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8085"
-    prometheus.io/path: "/jmx"
+    prometheus.io/path: "/prometheus"
     prometheus.io/scheme: "http"
 spec:
   clusterIP: None

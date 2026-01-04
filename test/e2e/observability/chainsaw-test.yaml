@@ -109,23 +109,23 @@ spec:
                 # Fetch metrics
                 METRICS=$(curl -s http://localhost:$PORT$ENDPOINT)
 
-                # Verify JMX JSON format (HBase 2.4.x returns JSON, not Prometheus format)
-                if ! echo "$METRICS" | grep -q '"beans"'; then
-                  echo "ERROR: Missing JMX JSON format (beans)"
+                # Verify Prometheus text format (HBase 2.6.1+ returns Prometheus format)
+                if ! echo "$METRICS" | grep -q '# TYPE'; then
+                  echo "ERROR: Missing Prometheus format (# TYPE)"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
-                # Verify JVM metrics present
-                if ! echo "$METRICS" | grep -q "JvmMetrics"; then
+                # Verify JVM metrics present in Prometheus format
+                if ! echo "$METRICS" | grep -qE '(jvm_|Jvm)'; then
                   echo "ERROR: Missing JVM metrics"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
-                # Verify HBase-specific metrics
-                if ! echo "$METRICS" | grep -q "Hadoop:service=HBase"; then
-                  echo "WARNING: Expected HBase metric pattern 'Hadoop:service=HBase' not found"
+                # Verify HBase-specific metrics in Prometheus format
+                if ! echo "$METRICS" | grep -qE '(hadoop_|Hadoop_)'; then
+                  echo "WARNING: Expected HBase metric pattern 'hadoop_' or 'Hadoop_' not found"
                 fi
 
                 echo "✓ Pod $POD metrics OK"
@@ -137,10 +137,10 @@ spec:
             }
 
             # Test all three roles
-            # Note: HBase 2.4.x only provides /jmx endpoint (not /prometheus)
-            test_role_metrics "master" "16010" "/jmx"
-            test_role_metrics "regionserver" "16030" "/jmx"
-            test_role_metrics "restserver" "8085" "/jmx"
+            # Note: HBase 2.6.1+ provides native /prometheus endpoint
+            test_role_metrics "master" "16010" "/prometheus"
+            test_role_metrics "regionserver" "16030" "/prometheus"
+            test_role_metrics "restserver" "8085" "/prometheus"
 
             echo "✓ All HBase roles metrics verified"
 
