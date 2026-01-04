@@ -41,7 +41,7 @@ jobs:
           # '1.31.4',
           '1.32.0'
         ]
-        product-version: ['2.4.18','2.6.1']
+        product-version: ['2.6.1','2.6.2']
     steps:
       - name: Clone the code
         uses: actions/checkout@v5
