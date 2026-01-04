@@ -1,0 +1,29 @@
+---
+apiVersion: zookeeper.kubedoop.dev/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  name: hbase-observability-znode
+spec:
+  clusterRef:
+    name: zk
+---
+apiVersion: hbase.kubedoop.dev/v1alpha1
+kind: HbaseCluster
+metadata:
+  name: test-hbase-observability
+spec:
+  clusterConfig:
+    zookeeperConfigMapName: hbase-observability-znode
+    hdfsConfigMapName: hdfs
+  master:
+    roleGroups:
+      default:
+        replicas: 1
+  regionServer:
+    roleGroups:
+      default:
+        replicas: 1
+  restServer:
+    roleGroups:
+      default:
+        replicas: 1

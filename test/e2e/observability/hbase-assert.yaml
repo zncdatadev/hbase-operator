@@ -1,0 +1,96 @@
+# Master metrics service
+# Note: HBase 2.6.1+ uses native /prometheus endpoint (Prometheus text format)
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-hbase-observability-master-default-metrics
+  labels:
+    prometheus.io/scrape: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "16010"
+    prometheus.io/path: "/prometheus"
+    prometheus.io/scheme: "http"
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 16010
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/instance: test-hbase-observability
+    app.kubernetes.io/component: master
+---
+# RegionServer metrics service
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-hbase-observability-regionserver-default-metrics
+  labels:
+    prometheus.io/scrape: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "16030"
+    prometheus.io/path: "/prometheus"
+    prometheus.io/scheme: "http"
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 16030
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/instance: test-hbase-observability
+    app.kubernetes.io/component: regionserver
+---
+# RestServer metrics service
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-hbase-observability-restserver-default-metrics
+  labels:
+    prometheus.io/scrape: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8085"
+    prometheus.io/path: "/prometheus"
+    prometheus.io/scheme: "http"
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 8085
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/instance: test-hbase-observability
+    app.kubernetes.io/component: restserver
+---
+# Master StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-hbase-observability-master-default
+status:
+  availableReplicas: 1
+  replicas: 1
+---
+# RegionServer StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-hbase-observability-regionserver-default
+status:
+  availableReplicas: 1
+  replicas: 1
+---
+# RestServer StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-hbase-observability-restserver-default
+status:
+  availableReplicas: 1
+  replicas: 1

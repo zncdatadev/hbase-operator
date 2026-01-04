@@ -58,7 +58,9 @@ func NewRoleGroupMetricsService(
 		annotations[k] = v
 	}
 	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/path"] = "/prom"
+	// Note: HBase 2.6.1+ provides native /prometheus endpoint (Prometheus text format)
+	// For HBase 2.4.x and earlier, use /jmx endpoint or a JMX exporter
+	annotations["prometheus.io/path"] = "/prometheus"
 	annotations["prometheus.io/port"] = strconv.Itoa(int(metricsPort))
 	annotations["prometheus.io/scheme"] = scheme
 
