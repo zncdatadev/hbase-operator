@@ -208,7 +208,7 @@ func (b *StatefulSetBuilder) getEnvVars() []corev1.EnvVar {
 }
 
 func (b *StatefulSetBuilder) buildContainer() []corev1.Container {
-	containers := []corev1.Container{}
+	containers := make([]corev1.Container, 0, 1)
 	mainContainerBuilder := builder.NewContainer(b.RoleName, b.GetImage()).
 		SetCommand([]string{"/bin/bash", "-x", "-euo", "pipefail", "-c"}).
 		SetArgs(b.GetMainContainerCommanArgs()).

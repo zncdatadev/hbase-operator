@@ -88,7 +88,7 @@ func (r *Reconciler) RegisterResourceWithRoleGroup(
 	roleGroupConfig *commonsv1alpha1.RoleGroupConfigSpec,
 ) ([]reconciler.Reconciler, error) {
 
-	var reconcilers []reconciler.Reconciler
+	reconcilers := make([]reconciler.Reconciler, 0, 4)
 
 	// StatefulSet
 	statefulSetReconciler, err := common.NewStatefulSetReconciler(
