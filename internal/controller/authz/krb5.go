@@ -11,6 +11,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	securityEnabled    = "true"
+	rpcProtectionLevel = "privacy"
+)
+
 var (
 	TlsStorePassword = "changeit"
 
@@ -83,9 +88,9 @@ func (c *HbaseKerberosConfig) GetContainerEnvvars() []corev1.EnvVar {
 func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 	return map[string]string{
 		"hbase.security.authentication": AuthenticationType,
-		"hbase.security.authorization":  "true",
-		"hbase.rpc.protection":          "privacy",
-		"dfs.data.transfer.protection":  "privacy",
+		"hbase.security.authorization":  securityEnabled,
+		"hbase.rpc.protection":          rpcProtectionLevel,
+		"dfs.data.transfer.protection":  rpcProtectionLevel,
 		"hbase.rpc.engine":              "org.apache.hadoop.hbase.ipc.SecureRpcEngine",
 
 		"hbase.master.kerberos.principal":       c.getPrincipal("hbase"),
@@ -103,12 +108,12 @@ func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 		"hbase.rest.authentication.kerberos.principal": c.getPrincipal("HTTP"),
 		"hbase.rest.authentication.kerberos.keytab":    KetytabFile,
 
-		"hbase.ssl.enabled": "true",
+		"hbase.ssl.enabled": securityEnabled,
 		"hbase.http.policy": "HTTPS_ONLY",
 		// Recommended by the docs https://hbase.apache.org/book.html#hbase.ui.cache
-		"hbase.http.filter.no-store.enable": "true",
+		"hbase.http.filter.no-store.enable": securityEnabled,
 
-		"hbase.rest.ssl.enabled":           "true",
+		"hbase.rest.ssl.enabled":           securityEnabled,
 		"hbase.rest.ssl.keystore.store":    path.Join(TlsStoreDir, "keystore.p12"),
 		"hbase.rest.ssl.keystore.password": TlsStorePassword,
 		"hbase.rest.ssl.keystore.type":     "pkcs12",
@@ -118,8 +123,8 @@ func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 func (c *HbaseKerberosConfig) GetDiscoveryConfig() map[string]string {
 	return map[string]string{
 		"hbase.security.authentication":         AuthenticationType,
-		"hbase.rpc.protection":                  "privacy",
-		"hbase.ssl.enabled":                     "true",
+		"hbase.rpc.protection":                  rpcProtectionLevel,
+		"hbase.ssl.enabled":                     securityEnabled,
 		"hbase.maser.kerberos.principal":        c.getPrincipal("hbase"),
 		"hbase.regionserver.kerberos.principal": c.getPrincipal("hbase"),
 		"hbase.rest.kerberos.principal":         c.getPrincipal("hbase"),
