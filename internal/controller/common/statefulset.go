@@ -19,11 +19,16 @@ import (
 	commonsv1alpha1 "github.com/zncdatadev/operator-go/pkg/apis/commons/v1alpha1"
 )
 
+const (
+	roleMaster       = "master"
+	roleRegionServer = "regionserver"
+)
+
 var (
 	roleNameToCommandArg = map[string]string{
-		"master":       "master",
-		"regionserver": "regionserver",
-		"restserver":   "rest",
+		roleMaster:       "master",
+		roleRegionServer: "regionserver",
+		"restserver":     "rest",
 	}
 	HBaseConfigDir      = path.Join(constants.KubedoopConfigDir)
 	HDFSConfigDir       = path.Join(constants.KubedoopConfigDir)
@@ -254,13 +259,13 @@ func (b *StatefulSetBuilder) getProbeHandler() *corev1.ProbeHandler {
 	// switch-cas
 	var prob *corev1.ProbeHandler
 	switch b.RoleName {
-	case "master":
+	case roleMaster:
 		prob = &corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString(b.RoleName),
 			},
 		}
-	case "regionserver":
+	case roleRegionServer:
 		prob = &corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString(b.RoleName),
