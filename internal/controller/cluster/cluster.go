@@ -42,7 +42,12 @@ func (r *Reconciler) GetImage() *util.Image {
 	image := util.NewImage(
 		hbasev1alpha1.DefaultProductName,
 		version.BuildVersion,
-		hbasev1alpha1.DefaultProductVersion,
+		func() string {
+			if r.Spec.Image.ProductVersion != "" {
+				return r.Spec.Image.ProductVersion
+			}
+			return hbasev1alpha1.DefaultProductVersion
+		}(),
 		func(options *util.ImageOptions) {
 			options.Custom = r.Spec.Image.Custom
 			options.Repo = r.Spec.Image.Repo
