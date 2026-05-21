@@ -179,7 +179,7 @@ jobs:
         run: ah lint
 
 
-  chart-lint-test:
+  chart-lint-helm:
     runs-on: ubuntu-latest
     needs:
       - check-crds-sync
@@ -208,54 +208,36 @@ jobs:
       - name: Get commit range
         id: commit-range
         run: |
-          # Get current and previous tag
           CURRENT_TAG="${{ github.ref_name }}"
           PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -A1 "^${CURRENT_TAG}$" | tail -n1)
-
-          # First release detection
           if [[ "$PREVIOUS_TAG" == "$CURRENT_TAG" || -z "$PREVIOUS_TAG" ]]; then
             echo "First release detected - marking all charts as changed"
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "target_branch=main" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          # Get previous tag commit
           PREVIOUS_COMMIT=$(git rev-list -n 1 "$PREVIOUS_TAG")
           echo "Current commit for previous tag ($PREVIOUS_TAG): $PREVIOUS_COMMIT"
-
-          # Get the branch name(s) of the previous commit, prefer release branches, then main, then others
           PREVIOUS_BRANCHES=$(git branch -r --contains "$PREVIOUS_COMMIT" | sed 's/^[ *]*//')
-          echo "Found branches containing the previous commit: $PREVIOUS_BRANCHES"
-
-          # Define branch priority: release branches (sorted), then main, then others
           PRIORITY_BRANCH=""
-          # 1. Find release branches (sorted lexicographically)
           RELEASE_BRANCH=$(echo "$PREVIOUS_BRANCHES" | grep -E 'origin/release' | sort | head -n1)
           if [[ -n "$RELEASE_BRANCH" ]]; then
             PRIORITY_BRANCH="$RELEASE_BRANCH"
           else
-            # 2. Fallback to main
             MAIN_BRANCH=$(echo "$PREVIOUS_BRANCHES" | grep -E '^origin/main$')
             if [[ -n "$MAIN_BRANCH" ]]; then
               PRIORITY_BRANCH="$MAIN_BRANCH"
             else
-              # 3. Fallback to the first other branch
               PRIORITY_BRANCH=$(echo "$PREVIOUS_BRANCHES" | head -n1)
             fi
           fi
-
-          echo "Removing 'origin/' from branches"
           PRIORITY_BRANCH=$(echo "$PRIORITY_BRANCH" | sed 's|^origin/||')
-          echo "Selected target branch for comparison: $PRIORITY_BRANCH"
-
           echo "target_branch=$PRIORITY_BRANCH" >> "$GITHUB_OUTPUT"
           echo "since_commit=$PREVIOUS_COMMIT" >> "$GITHUB_OUTPUT"
 
       - name: Check chart changes
         id: check-changes
         run: |
-          # Check for changes in chart directory using both --since and --target-branch parameters
           if ! changed=$(ct list-changed \
             --chart-dirs deploy/helm \
             --since "${{ steps.commit-range.outputs.since_commit }}" \
@@ -263,7 +245,6 @@ jobs:
             echo "Failed to check for changes"
             exit 1
           fi
-
           if [[ -n "$changed" ]]; then
             echo "Changed charts detected: $changed"
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -283,7 +264,7 @@ jobs:
         if: steps.check-changes.outputs.changed == 'true'
         uses: helm/kind-action@v1.13.0
         with:
-          cluster_name: kind  # Default cluster name is 'chart-testing'
+          cluster_name: kind
 
       - name: Load images to cluster
         if: steps.check-changes.outputs.changed == 'true'
@@ -292,45 +273,35 @@ jobs:
           kind load docker-image quay.io/zncdatadev/hbase-operator:$VERSION
 
       - name: Run chart-testing (install)
-        id: ct-test
         if: steps.check-changes.outputs.changed == 'true'
         run: |
           ct install \
             --since "${{ steps.commit-range.outputs.since_commit }}" \
             --target-branch "${{ steps.commit-range.outputs.target_branch }}" \
             --config ./.github/configs/ct-install.yaml
-          # Save success result to github output
-          if [[ $? -eq 0 ]]; then
-            echo "ct_tested=true" >> "$GITHUB_OUTPUT"
-          fi
 
-      - name: Build helm chart
-        if: steps.ct-test.outputs.ct_tested == 'true'
-        run: |
-          make helm-chart-package
+  chart-e2e:
+    runs-on: ubuntu-latest
+    needs:
+      - check-crds-sync
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Run e2e with chart
-        if: steps.ct-test.outputs.ct_tested == 'true'
-        run: |
-          HELM_DEPENDENCIES=(
-            commons-operator
-            listener-operator
-            secret-operator
-            zookeeper-operator
-            hdfs-operator
-          )
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
 
-          # Install dependencies
-          for dep in "${HELM_DEPENDENCIES[@]}"; do
-            helm upgrade --install --create-namespace --namespace kubedoop-operators --wait $dep oci://quay.io/kubedoopcharts/$dep --version $VERSION
-          done
+      - name: Create KinD cluster
+        env:
+          CHAINSAW_KUBECONFIG: kind-kubeconfig-chart-e2e
+        run: make setup-chainsaw-cluster
 
-          # Install packaged operator chart
-          helm install --create-namespace --namespace hbase-operators --wait hbase-operator ./target/charts/hbase-operator-$VERSION.tgz
-
-          # E2E tests
-          make chainsaw
-          ./bin/chainsaw test --test-dir ./test/e2e/
+      - name: Run chart-e2e
+        env:
+          CHAINSAW_KUBECONFIG: kind-kubeconfig-chart-e2e
+        run: make chart-e2e
 
 
   release-chart:
@@ -339,7 +310,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - chart-linter-artifacthub
-      - chart-lint-test
+      - chart-lint-helm
+      - chart-e2e
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
