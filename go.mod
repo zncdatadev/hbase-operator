@@ -1,6 +1,6 @@
 module github.com/zncdatadev/hbase-operator
 
-go 1.25.5
+go 1.25.8
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.1
