@@ -4,6 +4,8 @@ metadata:
   name: oidc
 spec:
   bindings:
+  - name: hbase_version
+    value: ($values.product_version)
   - name: KEYCLOAK_REALM
     value: kubedoop
   - name: KEYCLOAK_CLIENT_ID
