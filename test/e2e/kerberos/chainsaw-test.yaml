@@ -4,6 +4,8 @@ metadata:
   name: kerberos
 spec:
   bindings:
+  - name: hbase_version
+    value: ($values.product_version)
   - name: relam
     value: KUBEDOOP.DEV   # kerberos relam, should be uppercase, see hdfs also
   - name: kadminPassword

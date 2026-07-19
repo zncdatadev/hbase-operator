@@ -299,7 +299,7 @@ helm-chart-publish: helm-chart-package ## Publish helm chart for the operator.
 ##@ Chainsaw E2E
 
 CHAINSAW ?= $(LOCALBIN)/chainsaw
-CHAINSAW_VERSION ?= v0.2.13
+CHAINSAW_VERSION ?= v0.2.14
 CHAINSAW_CLUSTER ?= chainsaw-${PROJECT_NAME}
 CHAINSAW_KUBECONFIG ?= .kubeconfig
 # KIND_K8S_VERSION refers to the version of Kubernetes to be used by kind node image.
@@ -349,7 +349,7 @@ setup-chainsaw-e2e: chainsaw docker-build ## Run the chainsaw setup
 
 .PHONY: chainsaw-e2e
 chainsaw-e2e: ## Run the chainsaw e2e tests
-	KUBECONFIG=$(CHAINSAW_KUBECONFIG) $(CHAINSAW) test --config ./test/e2e/.chainsaw.yaml --test-dir ./test/e2e/
+	KUBECONFIG=$(CHAINSAW_KUBECONFIG) $(CHAINSAW) test --config ./test/e2e/.chainsaw.yaml --test-dir ./test/e2e/ --set product_version=$(PRODUCT_VERSION)
 
 .PHONY: cleanup-chainsaw-e2e
 cleanup-chainsaw-e2e: ## Run the chainsaw cleanup

@@ -24,6 +24,8 @@ metadata:
     app.kubernetes.io/created-by: hbase-operator
   name: krb5-hbase
 spec:
+  image:
+    productVersion: ($values.product_version)
   clusterConfig:
     zookeeperConfigMapName: krb5-hbase-znode
     hdfsConfigMapName: krb5-hdfs
