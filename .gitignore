@@ -169,3 +169,6 @@ target
 
 # ignore any local file
 **/*local*
+
+# AI worktree
+.worktree/
