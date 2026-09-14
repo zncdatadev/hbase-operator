@@ -81,7 +81,7 @@ spec:
       - describe:
           apiVersion: v1
           kind: Pod
-          selector: app.kubernetes.io/instance=krb5-hbase
+          selector: app.kubernetes.io/instance=hbase
       - podLogs:
-          selector: app.kubernetes.io/instance=krb5-hbase
+          selector: app.kubernetes.io/instance=hbase
           tail: -1

@@ -7,6 +7,13 @@ spec:
   clusterRef:
     name: zk
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-aggregator
+data:
+  ADDRESS: vector-aggregator:6000
+---
 apiVersion: hbase.kubedoop.dev/v1alpha1
 kind: HbaseCluster
 metadata:
@@ -17,7 +24,11 @@ spec:
   clusterConfig:
     zookeeperConfigMapName: hbase-observability-znode
     hdfsConfigMapName: hdfs
+    vectorAggregatorConfigMapName: vector-aggregator
   master:
+    config:
+      logging:
+        enableVectorAgent: true
     roleGroups:
       default:
         replicas: 1

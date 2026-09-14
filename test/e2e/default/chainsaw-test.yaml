@@ -31,3 +31,108 @@ spec:
     cleanup:
     - sleep:
         duration: 5s
+  - name: verify Gen 3 status
+    try:
+    - script:
+        bindings:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          #!/bin/bash
+          set -eu
+
+          for _ in $(seq 1 60); do
+            CR=$(kubectl get hbasecluster hbase -n "$NAMESPACE" -o json)
+            if echo "$CR" | jq -e '
+              .status.observedGeneration == .metadata.generation and
+              .status.roleGroups == {master:["default"], regionserver:["default"], restserver:["default"]} and
+              any(.status.conditions[]; .type == "ReconcileComplete" and .status == "True") and
+              any(.status.conditions[]; .type == "Degraded" and .status == "False") and
+              any(.status.conditions[]; .type == "Available" and .status == "True")
+            ' >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "$CR" | jq '.status' >&2
+          exit 1
+  - name: verify external dependency watches
+    try:
+    - script:
+        bindings:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          #!/bin/bash
+          set -eu
+
+          kubectl get configmap hbase-znode -n "$NAMESPACE" -o json |
+            jq '.metadata = {name:"hbase-watch-source", namespace:.metadata.namespace} |
+                .data.ZOOKEEPER_CHROOT = "/watch-initial" |
+                del(.immutable)' |
+            kubectl apply -f -
+          kubectl patch hbasecluster hbase -n "$NAMESPACE" --type=merge \
+            -p '{"spec":{"clusterConfig":{"zookeeperConfigMapName":"hbase-watch-source"}}}'
+
+          for _ in $(seq 1 30); do
+            if kubectl get configmap hbase-master-default -n "$NAMESPACE" \
+              -o jsonpath='{.data.hbase-site\.xml}' | grep -Fq '/watch-initial/hbase'; then
+              break
+            fi
+            sleep 1
+          done
+
+          kubectl patch configmap hbase-watch-source -n "$NAMESPACE" --type=merge \
+            -p '{"data":{"ZOOKEEPER_CHROOT":"/watch-reconciled"}}'
+          for _ in $(seq 1 20); do
+            if kubectl get configmap hbase-master-default -n "$NAMESPACE" \
+              -o jsonpath='{.data.hbase-site\.xml}' | grep -Fq '/watch-reconciled/hbase'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Referenced ConfigMap change did not trigger an HbaseCluster reconcile" >&2
+          exit 1
+  - name: verify pause stop resume and drift repair
+    try:
+    - script:
+        bindings:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          #!/bin/bash
+          set -eu
+
+          METRICS=hbase-master-default-metrics
+          kubectl patch hbasecluster hbase -n "$NAMESPACE" --type=merge \
+            -p '{"spec":{"clusterOperation":{"reconciliationPaused":true}}}'
+          kubectl wait hbasecluster/hbase -n "$NAMESPACE" \
+            --for=jsonpath='{.status.conditions[?(@.type=="Paused")].status}'=True --timeout=30s
+
+          kubectl annotate service "$METRICS" -n "$NAMESPACE" prometheus.io/path=/paused-drift --overwrite
+          sleep 5
+          test "$(kubectl get service "$METRICS" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.prometheus\.io/path}')" = /paused-drift
+
+          kubectl patch hbasecluster hbase -n "$NAMESPACE" --type=merge \
+            -p '{"spec":{"clusterOperation":{"reconciliationPaused":false}}}'
+          for _ in $(seq 1 30); do
+            if test "$(kubectl get service "$METRICS" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.prometheus\.io/path}')" = /prometheus; then
+              break
+            fi
+            sleep 1
+          done
+          test "$(kubectl get service "$METRICS" -n "$NAMESPACE" -o jsonpath='{.metadata.annotations.prometheus\.io/path}')" = /prometheus
+
+          kubectl patch hbasecluster hbase -n "$NAMESPACE" --type=merge \
+            -p '{"spec":{"clusterOperation":{"stopped":true}}}'
+          for STS in hbase-master-default hbase-regionserver-default hbase-restserver-default; do
+            kubectl wait statefulset/$STS -n "$NAMESPACE" --for=jsonpath='{.spec.replicas}'=0 --timeout=30s
+          done
+          kubectl wait hbasecluster/hbase -n "$NAMESPACE" \
+            --for=jsonpath='{.status.conditions[?(@.type=="Available")].reason}'=Stopped --timeout=30s
+
+          kubectl patch hbasecluster hbase -n "$NAMESPACE" --type=merge \
+            -p '{"spec":{"clusterOperation":{"stopped":false}}}'
+          for STS in hbase-master-default hbase-regionserver-default hbase-restserver-default; do
+            kubectl wait statefulset/$STS -n "$NAMESPACE" --for=jsonpath='{.spec.replicas}'=1 --timeout=30s
+          done

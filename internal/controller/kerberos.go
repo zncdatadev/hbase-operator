@@ -1,38 +1,42 @@
-package authz
+package controller
 
 import (
 	"fmt"
 	"path"
+	"strings"
 
-	"github.com/zncdatadev/operator-go/pkg/constants"
-	"github.com/zncdatadev/operator-go/pkg/util"
+	"github.com/zncdatadev/operator-go/pkg/constant"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	hbasev1alpha1 "github.com/zncdatadev/hbase-operator/api/v1alpha1"
 )
 
 const (
-	securityEnabled    = "true"
+	securityEnabled    = valueTrue
 	rpcProtectionLevel = "privacy"
+
+	kerberosAuthenticationType = "kerberos"
 )
 
 var (
 	TlsStorePassword = "changeit"
 
-	TlsStoreDir  = path.Join(constants.KubedoopRoot, "tls")
+	TlsStoreDir  = path.Join(constant.KubedoopRoot, "tls")
 	TrustoreFile = path.Join(TlsStoreDir, "truststore.p12")
 	KeystoreFile = path.Join(TlsStoreDir, "keystore.p12")
 	TrustoreType = "pkcs12"
 	KeystoreType = "pkcs12"
 
-	ConfigDir = path.Join(constants.KubedoopRoot, "conf")
-
-	AuthenticationType = "kerberos"
-	KerberosDir        = path.Join(constants.KubedoopRoot, "kerberos")
-	Krb5ConfigFile     = path.Join(KerberosDir, "krb5.conf")
-	KetytabFile        = path.Join(KerberosDir, "keytab")
+	KerberosDir    = path.Join(constant.KubedoopRoot, "kerberos")
+	Krb5ConfigFile = path.Join(KerberosDir, "krb5.conf")
+	KeytabFile     = path.Join(KerberosDir, "keytab")
 )
 
+// HbaseKerberosConfig computes the Kerberos+TLS wiring for a cluster: hbase-site.xml security
+// keys, ssl-client/server.xml store settings, the JVM/system properties, the secret-operator
+// CSI volumes and the entrypoint preamble that resolves the realm.
 type HbaseKerberosConfig struct {
 	Namespace   string
 	ClusterName string
@@ -41,19 +45,22 @@ type HbaseKerberosConfig struct {
 	TlsSecretClass      string
 }
 
-func NewHbaseKerberosConfig(
-	namespace string,
-	clustername string,
-	rolename string,
-	rolegroupname string,
-	kerberosSecretClass string,
-	tlsSecretClass string,
-) *HbaseKerberosConfig {
+// KerberosConfigFor returns the Kerberos config when the cluster enables Kerberos
+// authentication (both secret classes set, mirroring the pre-Gen3 gate), else nil.
+func KerberosConfigFor(cr *hbasev1alpha1.HbaseCluster) *HbaseKerberosConfig {
+	clusterConfig := cr.Spec.ClusterConfigSpec
+	if clusterConfig == nil || clusterConfig.Authentication == nil {
+		return nil
+	}
+	auth := clusterConfig.Authentication
+	if auth.KerberosSecretClass == "" || auth.TlsSecretClass == "" {
+		return nil
+	}
 	return &HbaseKerberosConfig{
-		Namespace:           namespace,
-		ClusterName:         clustername,
-		KerberosSecretClass: kerberosSecretClass,
-		TlsSecretClass:      tlsSecretClass,
+		Namespace:           cr.Namespace,
+		ClusterName:         cr.Name,
+		KerberosSecretClass: auth.KerberosSecretClass,
+		TlsSecretClass:      auth.TlsSecretClass,
 	}
 }
 
@@ -62,32 +69,25 @@ func (c *HbaseKerberosConfig) getPrincipal(service string) string {
 	return fmt.Sprintf("%s/%s@${env.KERBEROS_REALM}", service, host)
 }
 
+// GetJVMOPTS returns the system properties exported through HBASE_<role>_OPTS in hbase-env.sh.
 func (c *HbaseKerberosConfig) GetJVMOPTS() map[string]string {
 	return map[string]string{
 		"java.security.krb5.conf": Krb5ConfigFile,
 	}
 }
 
-func (c *HbaseKerberosConfig) GetContainerEnvvars() []corev1.EnvVar {
-
-	return []corev1.EnvVar{
-		{
-			Name:  "KRB5_CONFIG",
-			Value: Krb5ConfigFile,
-		},
-		{
-			Name: "HBASE_OPTS",
-			Value: fmt.Sprintf(
-				"-Djava.security.krb5.conf=%s",
-				Krb5ConfigFile,
-			),
-		},
+// GetEnvOverrides returns the Kerberos container environment, flowing through the merge
+// pipeline as env overrides so a user's CRD envOverrides win.
+func (c *HbaseKerberosConfig) GetEnvOverrides() map[string]string {
+	return map[string]string{
+		"KRB5_CONFIG": Krb5ConfigFile,
+		"HBASE_OPTS":  fmt.Sprintf("-Djava.security.krb5.conf=%s", Krb5ConfigFile),
 	}
 }
 
 func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 	return map[string]string{
-		"hbase.security.authentication": AuthenticationType,
+		"hbase.security.authentication": kerberosAuthenticationType,
 		"hbase.security.authorization":  securityEnabled,
 		"hbase.rpc.protection":          rpcProtectionLevel,
 		"dfs.data.transfer.protection":  rpcProtectionLevel,
@@ -97,16 +97,16 @@ func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 		"hbase.regionserver.kerberos.principal": c.getPrincipal("hbase"),
 		"hbase.rest.kerberos.principal":         c.getPrincipal("HTTP"),
 
-		"hbase.master.keytab.file":       KetytabFile,
-		"hbase.regionserver.keytab.file": KetytabFile,
-		"hbase.rest.keytab.file":         KetytabFile,
+		"hbase.master.keytab.file":       KeytabFile,
+		"hbase.regionserver.keytab.file": KeytabFile,
+		"hbase.rest.keytab.file":         KeytabFile,
 
 		"hbase.coprocessor.master.classes": "org.apache.hadoop.hbase.security.access.AccessController",
 		"hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController",
 
-		"hbase.rest.authentication.type":               AuthenticationType,
+		"hbase.rest.authentication.type":               kerberosAuthenticationType,
 		"hbase.rest.authentication.kerberos.principal": c.getPrincipal("HTTP"),
-		"hbase.rest.authentication.kerberos.keytab":    KetytabFile,
+		"hbase.rest.authentication.kerberos.keytab":    KeytabFile,
 
 		"hbase.ssl.enabled": securityEnabled,
 		"hbase.http.policy": "HTTPS_ONLY",
@@ -120,18 +120,7 @@ func (c *HbaseKerberosConfig) GetHbaseSite() map[string]string {
 	}
 }
 
-func (c *HbaseKerberosConfig) GetDiscoveryConfig() map[string]string {
-	return map[string]string{
-		"hbase.security.authentication":         AuthenticationType,
-		"hbase.rpc.protection":                  rpcProtectionLevel,
-		"hbase.ssl.enabled":                     securityEnabled,
-		"hbase.maser.kerberos.principal":        c.getPrincipal("hbase"),
-		"hbase.regionserver.kerberos.principal": c.getPrincipal("hbase"),
-		"hbase.rest.kerberos.principal":         c.getPrincipal("hbase"),
-	}
-}
-
-func (c *HbaseKerberosConfig) GetSSLServerSttings() map[string]string {
+func (c *HbaseKerberosConfig) GetSSLServerSettings() map[string]string {
 	return map[string]string{
 		"ssl.server.truststore.location": TrustoreFile,
 		"ssl.server.truststore.type":     TrustoreType,
@@ -150,23 +139,26 @@ func (c *HbaseKerberosConfig) GetSSLClientSettings() map[string]string {
 	}
 }
 
-func (c *HbaseKerberosConfig) GetVolumeMounts() []corev1.VolumeMount {
+func (c *HbaseKerberosConfig) VolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      "kerberos",
+			Name:      KerberosVolumeName,
 			MountPath: KerberosDir,
 		},
 		{
-			Name:      "tls",
+			Name:      TLSVolumeName,
 			MountPath: TlsStoreDir,
 		},
 	}
 }
 
-func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
+// GetVolumes returns the secret-operator CSI ephemeral volumes materializing the keytab and the
+// TLS stores. The annotations are the secret-operator's public contract and must stay
+// byte-identical across the Gen 3 migration.
+func (c *HbaseKerberosConfig) Volumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "kerberos",
+			Name: KerberosVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Ephemeral: &corev1.EphemeralVolumeSource{
 					VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
@@ -192,7 +184,7 @@ func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
 		},
 
 		{
-			Name: "tls",
+			Name: TLSVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Ephemeral: &corev1.EphemeralVolumeSource{
 					VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
@@ -220,13 +212,21 @@ func (c *HbaseKerberosConfig) GetVolumes() []corev1.Volume {
 	}
 }
 
+// GetContainerCommands returns the entrypoint preamble that resolves the Kerberos realm from
+// krb5.conf and substitutes it into the copied Hadoop/HBase config files.
 func (c *HbaseKerberosConfig) GetContainerCommands() string {
 	cmds := `
 export KERBEROS_REALM=$(grep -oP 'default_realm = \K.*' ` + Krb5ConfigFile + `)
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g" ` + path.Join(constants.KubedoopConfigDir, "core-site.xml") + `
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(constants.KubedoopConfigDir, "hdfs-site.xml") + `
-sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(constants.KubedoopConfigDir, "hbase-site.xml") + `
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g" ` + path.Join(HbaseConfigDir, "core-site.xml") + `
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(HbaseConfigDir, "hdfs-site.xml") + `
+sed -i -e 's/${env.KERBEROS_REALM}/'"$KERBEROS_REALM/g"  ` + path.Join(HbaseConfigDir, "hbase-site.xml") + `
 `
 
-	return util.IndentTab4Spaces(cmds)
+	return indentTab4Spaces(cmds)
+}
+
+// indentTab4Spaces converts tab indentation to 4 spaces, matching the pre-Gen3
+// util.IndentTab4Spaces helper so the rendered scripts stay byte-identical.
+func indentTab4Spaces(s string) string {
+	return strings.ReplaceAll(s, "\t", "    ")
 }

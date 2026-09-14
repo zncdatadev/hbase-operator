@@ -148,6 +148,21 @@ spec:
     - assert:
         timeout: 600s
         file: hbase-assert.yaml
+    - script:
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          set -eu
+          for ROLE in master regionserver restserver; do
+            UPPER_ROLE=$(printf '%s' "$ROLE" | tr '[:lower:]' '[:upper:]')
+            ENV_FILE=$(kubectl get configmap "krb5-hbase-$ROLE-default" -n "$NAMESPACE" -o jsonpath='{.data.hbase-env\.sh}')
+            printf '%s\n' "$ENV_FILE" | grep "HBASE_${UPPER_ROLE}_OPTS"
+            if printf '%s\n' "$ENV_FILE" | grep -q "HBASE_${ROLE}_OPTS"; then
+              echo "hbase-env.sh contains ignored lowercase role variable HBASE_${ROLE}_OPTS"
+              exit 1
+            fi
+          done
     cleanup:
     - sleep:
         duration: 10s

@@ -283,7 +283,7 @@ helm-chart-package: ## Package helm chart for the operator.
 	rm -rf target/charts/*.tgz
 	"$(HELM)" package deploy/helm/$(PROJECT_NAME) --version $(VERSION) --app-version $(VERSION) --destination target/charts
 
-n.PHONY: chart-e2e
+.PHONY: chart-e2e
 chart-e2e: setup-chainsaw-cluster chainsaw docker-build helm-chart-package ## Run chart e2e tests (deploy via Helm, then run chainsaw)
 	"$(KIND)" --name $(CHAINSAW_CLUSTER) load docker-image "$(IMG)"
 	@echo "Installing hbase-operator chart..."
@@ -307,7 +307,14 @@ CHAINSAW_KUBECONFIG ?= .kubeconfig
 # When run `kind create --image kindest/node:v${KIND_K8S_VERSION}`, the node image version of k8s will be used to create the kind cluster,
 # and the target kubeconfig file will be named as `$(CHAINSAW_KUBECONFIG)` (default: `.kubeconfig`).
 # So if you want to use the target cluster, run `export KUBECONFIG=$(CHAINSAW_KUBECONFIG)` (default: `.kubeconfig`).
-KIND_K8S_VERSION ?= 1.26.15
+#
+# Keep this in sync with the k8s-version matrix in .github/workflows/test.yml. The operator
+# injects the oauth2-proxy authentication proxy as a native sidecar (an init container with
+# restartPolicy: Always and probes), which the API server only accepts from Kubernetes 1.29
+# (GA in 1.33) — on an older cluster every pod of an OIDC-enabled cluster is rejected with
+# "livenessProbe: Forbidden: may not be set for init containers" and the StatefulSet never
+# creates a pod.
+KIND_K8S_VERSION ?= 1.35.0
 # The kind node image can found in https://github.com/kubernetes-sigs/kind/releases.
 KIND_IMAGE ?= kindest/node:v${KIND_K8S_VERSION}
 # Define operator dependencies to be installed before running chainsaw tests.

@@ -309,6 +309,7 @@ jobs:
       - name: Run chart-e2e
         env:
           CHAINSAW_KUBECONFIG: kind-kubeconfig-chart-e2e
+          PRODUCT_VERSION: 2.6.2
         run: make chart-e2e
 
 

@@ -67,7 +67,42 @@ spec:
             status:
               readyReplicas: 1
 
-  # 4. Verify metrics port connectivity and format for all HBase roles
+  # 4. Verify the complete Vector pipeline on the master role.
+  - name: verify vector pipeline
+    try:
+      - script:
+          bindings:
+          - name: NAMESPACE
+            value: ($namespace)
+          content: |
+            #!/bin/bash
+            set -eu
+
+            CONFIG=$(kubectl get configmap test-hbase-observability-master-default -n "$NAMESPACE" -o json)
+            printf '%s\n' "$CONFIG" | jq -er '.data["vector.yaml"]' | grep -F 'vector-aggregator:6000'
+            printf '%s\n' "$CONFIG" | jq -er '.data["vector.yaml"]' | grep -F '/kubedoop/log/*/*.log4j.xml'
+            printf '%s\n' "$CONFIG" | jq -er '.data["log4j.properties"]' | grep -F '/kubedoop/log/master/master.log4j.xml'
+
+            POD=$(kubectl get pods -n "$NAMESPACE" \
+              -l app.kubernetes.io/component=master,app.kubernetes.io/instance=test-hbase-observability \
+              -o jsonpath='{.items[0].metadata.name}')
+            kubectl exec -n "$NAMESPACE" "$POD" -c vector -- vector --version
+
+            kubectl port-forward -n "$NAMESPACE" "pod/$POD" 19598:9598 > /dev/null 2>&1 &
+            PF_PID=$!
+            trap 'kill "$PF_PID" 2>/dev/null || true' EXIT
+            for _ in $(seq 1 15); do
+              if METRICS=$(curl --fail --silent http://localhost:19598/metrics); then
+                if printf '%s\n' "$METRICS" | grep '^# HELP' >/dev/null; then
+                  exit 0
+                fi
+              fi
+              sleep 1
+            done
+            echo "Vector metrics endpoint did not become ready" >&2
+            exit 1
+
+  # 5. Verify metrics port connectivity and format for all HBase roles
   - name: verify metrics connectivity
     try:
       - script:
@@ -76,7 +111,7 @@ spec:
             value: ($namespace)
           content: |
             #!/bin/bash
-            set -ex
+            set -e
 
             echo "Namespace: $NAMESPACE"
 
@@ -85,6 +120,7 @@ spec:
               local ROLE=$1
               local PORT=$2
               local ENDPOINT=$3
+              local CONTEXT=$4
 
               echo "=== Testing $ROLE role (port $PORT, endpoint $ENDPOINT) ==="
 
@@ -113,22 +149,24 @@ spec:
                 METRICS=$(curl -s http://localhost:$PORT$ENDPOINT)
 
                 # Verify Prometheus text format (HBase 2.6.1+ returns Prometheus format)
-                if ! echo "$METRICS" | grep -q '# TYPE'; then
+                if ! printf '%s\n' "$METRICS" | grep '# TYPE' >/dev/null; then
                   echo "ERROR: Missing Prometheus format (# TYPE)"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
                 # Verify JVM metrics present in Prometheus format
-                if ! echo "$METRICS" | grep -qE '(jvm_|Jvm)'; then
+                if ! printf '%s\n' "$METRICS" | grep -E '(jvm_|Jvm)' >/dev/null; then
                   echo "ERROR: Missing JVM metrics"
                   kill $PF_PID 2>/dev/null || true
                   exit 1
                 fi
 
-                # Verify HBase-specific metrics in Prometheus format
-                if ! echo "$METRICS" | grep -qE '(hadoop_|Hadoop_)'; then
-                  echo "WARNING: Expected HBase metric pattern 'hadoop_' or 'Hadoop_' not found"
+                # Verify product metrics, not just generic JVM metrics.
+                if ! printf '%s\n' "$METRICS" | grep -F "context=\"$CONTEXT\"" >/dev/null; then
+                  echo "ERROR: Missing HBase metrics context $CONTEXT"
+                  kill $PF_PID 2>/dev/null || true
+                  exit 1
                 fi
 
                 echo "✓ Pod $POD metrics OK"
@@ -141,13 +179,13 @@ spec:
 
             # Test all three roles
             # Note: HBase 2.6.1+ provides native /prometheus endpoint
-            test_role_metrics "master" "16010" "/prometheus"
-            test_role_metrics "regionserver" "16030" "/prometheus"
-            test_role_metrics "restserver" "8085" "/prometheus"
+            test_role_metrics "master" "16010" "/prometheus" "master"
+            test_role_metrics "regionserver" "16030" "/prometheus" "regionserver"
+            test_role_metrics "restserver" "8085" "/prometheus" "rest"
 
             echo "✓ All HBase roles metrics verified"
 
-  # 5. Install Prometheus
+  # 6. Install Prometheus
   - name: install prometheus
     try:
       - script:
@@ -166,20 +204,28 @@ spec:
               exit 1
             fi
 
-            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>/dev/null || true
-            helm repo update
+            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
 
             echo "=== Installing Prometheus ==="
             echo "Will install to namespace: $NAMESPACE"
 
-            helm upgrade --install prometheus prometheus-community/prometheus \
+            RELEASE="prometheus-$NAMESPACE"
+            helm upgrade --install "$RELEASE" prometheus-community/prometheus \
               --version 25.3.1 \
               --namespace "$NAMESPACE" \
               --create-namespace \
               -f prometheus-values.yaml \
               --wait --timeout 5m
+    cleanup:
+      - script:
+          bindings:
+            - name: NAMESPACE
+              value: ($namespace)
+          content: |
+            #!/bin/sh
+            helm uninstall "prometheus-$NAMESPACE" --namespace "$NAMESPACE" --wait || true
 
-  # 6. Verify Prometheus targets
+  # 7. Verify Prometheus targets
   - name: verify prometheus targets
     try:
       - script:
@@ -195,49 +241,38 @@ spec:
             sleep 3
 
             # Port-forward
-            kubectl port-forward -n "$NAMESPACE" svc/prometheus-server 9090:80 > /dev/null 2>&1 &
+            kubectl port-forward -n "$NAMESPACE" "svc/prometheus-$NAMESPACE-server" 9090:80 > /dev/null 2>&1 &
             PF_PID=$!
-            sleep 2
-
             trap "kill $PF_PID 2>/dev/null || true" EXIT
 
-            # Check targets
-            TARGETS=$(curl -s http://localhost:9090/api/v1/targets)
-
-            echo "=== Checking Prometheus Targets ==="
-
-            # Check if we have any active targets
-            ACTIVE=$(echo "$TARGETS" | grep -o '"state":"up"' | wc -l)
-            echo "Total active targets: $ACTIVE"
-
-            if [ "$ACTIVE" -eq 0 ]; then
-              echo "WARNING: No active targets found"
-            fi
-
-            # Check for HBase targets (all three roles)
-            echo "Looking for HBase targets..."
-
-            # Check each role separately (avoid bash array for sh compatibility)
-            for ROLE in master regionserver restserver; do
-              echo "Checking $ROLE targets..."
-
-              if echo "$TARGETS" | grep -q "test-hbase-observability-$ROLE"; then
-                echo "✓ Found HBase $ROLE target"
-
-                # Verify target is UP
-                if echo "$TARGETS" | grep "test-hbase-observability-$ROLE" | grep -q '"health":"up"'; then
-                  echo "✓ HBase $ROLE target is UP"
-                else
-                  echo "WARNING: HBase $ROLE target found but not UP"
-                  echo "$TARGETS" | grep "test-hbase-observability-$ROLE" | head -20
+            # The port-forward process and the first Prometheus scrape can lag
+            # behind Helm's pod readiness. Retry the complete target assertion.
+            TARGETS=''
+            for _ in $(seq 1 60); do
+              if TARGETS=$(curl --fail --silent http://localhost:9090/api/v1/targets); then
+                if printf '%s\n' "$TARGETS" | jq -e \
+                  '.status == "success" and (.data.activeTargets | type == "array")' >/dev/null 2>&1; then
+                  ALL_UP=true
+                  for ROLE in master regionserver restserver; do
+                    UP=$(printf '%s\n' "$TARGETS" | jq --arg marker "test-hbase-observability-$ROLE" \
+                      '[.data.activeTargets[] | select((tostring | contains($marker)) and .health == "up")] | length')
+                    if [ "$UP" -eq 0 ]; then
+                      ALL_UP=false
+                      break
+                    fi
+                  done
+                  if [ "$ALL_UP" = true ]; then
+                    echo "✓ All HBase roles found and UP in Prometheus targets"
+                    exit 0
+                  fi
                 fi
-              else
-                echo "ERROR: HBase $ROLE target not found in Prometheus"
-                echo "Available targets:"
-                echo "$TARGETS" | grep -o '"job":"[^"]*"' | sort | uniq
-                exit 1
               fi
+              sleep 2
             done
 
-            echo "✓ All HBase roles found in Prometheus targets"
-            echo "✓ Prometheus targets verification complete"
+            echo "ERROR: HBase Prometheus targets did not all become UP" >&2
+            if [ -n "$TARGETS" ]; then
+              printf '%s\n' "$TARGETS" | jq \
+                '[.data.activeTargets[] | select(tostring | contains("test-hbase-observability")) | {labels, health, lastError}]' >&2
+            fi
+            exit 1

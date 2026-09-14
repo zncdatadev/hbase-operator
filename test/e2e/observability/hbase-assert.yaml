@@ -17,7 +17,7 @@ spec:
     - name: metrics
       port: 16010
       protocol: TCP
-      targetPort: metrics
+      targetPort: ui-http
   selector:
     app.kubernetes.io/instance: test-hbase-observability
     app.kubernetes.io/component: master
@@ -40,7 +40,7 @@ spec:
     - name: metrics
       port: 16030
       protocol: TCP
-      targetPort: metrics
+      targetPort: ui-http
   selector:
     app.kubernetes.io/instance: test-hbase-observability
     app.kubernetes.io/component: regionserver
@@ -63,7 +63,7 @@ spec:
     - name: metrics
       port: 8085
       protocol: TCP
-      targetPort: metrics
+      targetPort: ui-http
   selector:
     app.kubernetes.io/instance: test-hbase-observability
     app.kubernetes.io/component: restserver
